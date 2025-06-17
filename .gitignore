@@ -1,0 +1,9 @@
+# Visual studio
+.vs/
+
+# Build
+out/
+
+# Fix
+log/
+store/
