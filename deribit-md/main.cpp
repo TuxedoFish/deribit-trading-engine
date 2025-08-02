@@ -10,7 +10,7 @@ int main()
         FIX::SessionSettings settings("deribit-md/config/deribit.cfg");
 
         // Create application
-        Application application;
+        ApplicationPersister application("C:/Users/harry/Documents/Data/deribit-raw-capture");
 
         // Create stores and logs
         FIX::FileStoreFactory storeFactory(settings);

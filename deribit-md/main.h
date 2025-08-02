@@ -10,6 +10,7 @@
 #include "quickfix/FileLog.h"
 #include "quickfix/SocketInitiator.h"
 #include "quickfix/SessionSettings.h"
+#include "ApplicationPersister.h"
 #include "quickfix/ThreadedSSLSocketInitiator.h"
 
 // TODO: Reference additional headers your program requires here.

@@ -17,6 +17,7 @@
 #include <algorithm> 
 #include <vector>
 #include "AuthHandler.h"
+#include "MarketDataLogger.h"
 
 using encoding_t = unsigned char const*;
 
