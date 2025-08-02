@@ -36,20 +36,30 @@ void Application::toAdmin(FIX::Message& message, const FIX::SessionID& sessionID
         // Creates the raw data
         std::chrono::milliseconds ms = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
         std::string timestamp_in_ms = std::to_string(ms.count());
-        unsigned char nonce[32] = {};
-        RAND_bytes(nonce, sizeof(nonce));
-        std::string nonce64 = AuthHandler::base64_encode(nonce, sizeof(nonce));
-        std::string raw_data = timestamp_in_ms + "." + nonce64;
-        std::string base_signature_string = raw_data + secret;
-        std::cout << "Logging on with timetsamp=" << timestamp_in_ms << " nonce64=" << nonce64 << " raw_data=" << raw_data << "base_signature_string=" << base_signature_string << std::endl;
+        
+        // Creating the random nonce (32 random bytes encoded in base64)
+        constexpr int nonce_to_encode_size = 32;
+        unsigned char nonce_to_encode[nonce_to_encode_size];
+        if (!RAND_bytes(nonce_to_encode, nonce_to_encode_size)) {
+            throw(std::runtime_error("Impossible to create random data to login"));
+        }
+        encoding_t nonce = reinterpret_cast<encoding_t>(nonce_to_encode);
+        std::string nonce64 = AuthHandler::base64_encode(nonce, nonce_to_encode_size);
+
+        // Creating raw data with format timestamp.nonce64
+        std::stringstream raw_data_stream;
+        raw_data_stream << timestamp_in_ms << "." << nonce64;
+        std::string raw_data = raw_data_stream.str();
+        std::string raw_and_secret = raw_data + secret;
+        std::cout << "Logging on with timestamp=" << timestamp_in_ms << " nonce64=" << nonce64 << " raw_data=" << raw_data << "raw_and_secret=" << raw_and_secret << std::endl;
 
         // Creates the password field
         unsigned char hash[SHA256_DIGEST_LENGTH];
         SHA256_CTX sha256;
         SHA256_Init(&sha256);
-        SHA256_Update(&sha256, base_signature_string.c_str(), base_signature_string.size());
+        SHA256_Update(&sha256, raw_and_secret.c_str(), raw_and_secret.size());
         SHA256_Final(hash, &sha256);
-        static std::string password_sha_base64 = AuthHandler::base64_encode(hash, sizeof(hash));
+        std::string password_sha_base64 = AuthHandler::base64_encode(hash, SHA256_DIGEST_LENGTH);
 
         message.setField(FIX::Username(user));
         message.setField(FIX::RawData(raw_data));

@@ -18,6 +18,8 @@
 #include <vector>
 #include "AuthHandler.h"
 
+using encoding_t = unsigned char const*;
+
 class Application : public FIX::Application, public FIX::MessageCracker
 {
 public:
