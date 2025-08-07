@@ -1,0 +1,4 @@
+md_raw_fix_file_path=
+fix_settings_file_path=
+deribit-client_id=
+deribit-client_secret=

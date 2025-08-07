@@ -1,7 +1,7 @@
 #include "ApplicationPersister.h"
 
-ApplicationPersister::ApplicationPersister(const std::string& logDirectory)
-    : Application(), m_logger(std::make_unique<MarketDataLogger>(logDirectory)) {
+ApplicationPersister::ApplicationPersister(SimpleConfig& config)
+    : Application(config), m_logger(std::make_unique<MarketDataLogger>(config.getString("md_raw_fix_file_path"))) {
 }
 
 void ApplicationPersister::toApp(FIX::Message& message, const FIX::SessionID& sessionID) noexcept {

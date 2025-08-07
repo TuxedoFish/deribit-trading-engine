@@ -27,11 +27,8 @@ void Application::toAdmin(FIX::Message& message, const FIX::SessionID& sessionID
 
     if (msgType.getValue() == FIX::MsgType_Logon)
     {
-        // TODO: Fetch from a settings file
-        // string user = settings->get().getString("Username");
-        // string secret = settings->get().getString("Password");
-        std::string user = "CsNBskWa";
-        std::string secret = "ZE2W9NCqp7QtbWI7avjML4T0DANpDCR2t_MgLnHiNTY";
+        std::string user = config_.getString("deribit_client_id");
+        std::string secret = config_.getString("deribit_client_secret");
 
         // Creates the raw data
         std::chrono::milliseconds ms = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());

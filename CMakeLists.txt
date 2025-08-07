@@ -13,5 +13,9 @@ project ("deribit-md")
 
 set(CMAKE_CXX_STANDARD 20)
 
+# Dependencies
+find_package(OpenSSL REQUIRED)
+find_package(quickfix CONFIG REQUIRED)
+
 # Include sub-projects.
 add_subdirectory ("deribit-md")

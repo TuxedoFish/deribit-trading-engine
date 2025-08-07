@@ -5,5 +5,10 @@
 out/
 
 # Fix
+*.log
 log/
 store/
+
+# Settings
+deribit-md/config/settings.md-hist.txt
+deribit-md/config/settings.md-process.txt

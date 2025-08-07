@@ -18,13 +18,14 @@
 #include <vector>
 #include "AuthHandler.h"
 #include "MarketDataLogger.h"
+#include "SimpleConfig.h"
 
 using encoding_t = unsigned char const*;
 
 class Application : public FIX::Application, public FIX::MessageCracker
 {
 public:
-    Application() {}
+    Application(SimpleConfig& config) : config_{ config } {}
 
     // Application interface
     void onCreate(const FIX::SessionID&) override;
@@ -45,6 +46,7 @@ public:
 private:
     FIX::SessionID m_sessionID;
     bool m_loggedOn = false;
+    SimpleConfig config_;
 
     // Overloaded onMessage
     void onMessage(const FIX44::MarketDataRequest&, const FIX::SessionID&);

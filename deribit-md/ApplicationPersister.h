@@ -3,6 +3,7 @@
 
 #include "Application.h"
 #include "MarketDataLogger.h"
+#include "SimpleConfig.h"
 #include <memory>
 #include <string>
 
@@ -12,7 +13,7 @@ private:
 
 public:
     // Constructor with optional log directory
-    explicit ApplicationPersister(const std::string& logDirectory = "market_data_logs");
+    explicit ApplicationPersister(SimpleConfig& config);
     virtual ~ApplicationPersister() = default;
 
     // Override FIX::Application interface to add logging

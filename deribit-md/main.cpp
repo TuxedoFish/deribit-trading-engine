@@ -1,48 +1,29 @@
-﻿// main.cpp : Defines the entry point for the application.
+﻿#include "main.h"
 
-#include "main.h"
-
-int main()
+int main(int argc, char* argv[])
 {
-    try
+    CmdLineOptions options(argc, argv);
+    std::string applicationName = "UNSET";
+    if (options.cmdOptionExists("--app"))
     {
-        // Load configuration
-        FIX::SessionSettings settings("deribit-md/config/deribit.cfg");
-
-        // Create application
-        ApplicationPersister application("C:/Users/harry/Documents/Data/deribit-raw-capture");
-
-        // Create stores and logs
-        FIX::FileStoreFactory storeFactory(settings);
-        FIX::FileLogFactory logFactory(settings);
-
-        // Create initiator
-        FIX::ThreadedSSLSocketInitiator initiator(application, storeFactory, settings, logFactory);
-
-        // Start the connection
-        initiator.start();
-        std::cout << "FIX client started. Type #quit to quit..." << std::endl;
-
-        while (true) {
-            std::string value;
-            std::cin >> value;
-
-            if (value == "#quit") {
-                break;
-            }
-
-            std::cout << std::endl;
-        }
-
-        // Stop the connection
-        initiator.stop();
-
-    }
-    catch (std::exception& e)
-    {
-        std::cout << "Error: " << e.what() << std::endl;
-        return 1;
+        applicationName = options.getCmdOption("--app");
     }
 
-    return 0;
+    if (applicationName == "md-hist") {
+        std::cout << "Running as: " << applicationName << std::endl;
+        SimpleConfig config("config/settings.md-hist.txt");
+        AppRunner app(config);
+        return app.runMarketdataHistoricalStorage();
+    }
+    else if (applicationName == "md-process") {
+        std::cout << "Running as: " << applicationName << std::endl;
+        SimpleConfig config("config/settings.md-process.txt");
+        AppRunner app(config);
+        return app.runProcessRawMarketdata();
+    }
+    else {
+        std::cout << "Unknown application: " << applicationName << std::endl;
+        return 0;
+    }
 }
+
