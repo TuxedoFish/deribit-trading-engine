@@ -5,8 +5,12 @@
 #include <ctime>
 #include <iomanip>
 #include <iostream>
+#include <algorithm>
 #include <chrono>
 #include <sstream>
+#include <boost/iostreams/device/mapped_file.hpp>
+#include <string_view>
+#include <filesystem>
 #include "Application.h"
 #include "SimpleConfig.h"
 #include "ApplicationPersister.h"

@@ -12,8 +12,15 @@ endif()
 # Dependencies
 find_package(OpenSSL REQUIRED)
 find_package(quickfix CONFIG REQUIRED)
+find_package(Boost REQUIRED COMPONENTS iostreams)
 
 target_link_libraries(deribit-md 
     ws2_32 wsock32 winmm crypt32 secur32
     ${OPENSSL_LIBRARIES} quickfix
+    Boost::iostreams
+)
+
+# Generated code
+target_include_directories(deribit-md PRIVATE 
+    ${CMAKE_SOURCE_DIR}/generated
 )

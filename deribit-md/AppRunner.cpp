@@ -47,8 +47,7 @@ int AppRunner::runProcessRawMarketdata() {
         std::string filePath = rawFixCapturesLoc + kPathSeparator + std::to_string(1900 + currentDate.tm_year) 
             + kPathSeparator + getMonthDayString(currentDate.tm_mon + 1)
             + kPathSeparator + getMonthDayString(currentDate.tm_mday) + ".txt";
-        std::ifstream file(filePath);
-        if (!file.good()) {
+        if (!std::filesystem::exists(filePath)) {
             if (currentDate.tm_mday < 28) {
                 std::cout << "Could not find: " << filePath << " exiting." << std::endl;
                 break;
@@ -66,29 +65,63 @@ int AppRunner::runProcessRawMarketdata() {
                 + kPathSeparator + getMonthDayString(currentDate.tm_mday) + ".txt";
         }
 
-        file = std::ifstream(filePath);
-        if (!file.good()) {
+        if (!std::filesystem::exists(filePath)) {
             std::cout << "Could not find: " << filePath << " exiting." << std::endl;
             break;
         }
 
-        auto end = std::chrono::system_clock::now();
-        std::time_t time = std::chrono::system_clock::to_time_t(end);
-        std::cout << "Processing " << filePath << " started at " << std::ctime(&time) << std::endl;
-        std::string line;
-        while (std::getline(file, line))
-        {
-            if (line.empty())
+        auto now = std::chrono::system_clock::now();
+        std::time_t nowTime = std::chrono::system_clock::to_time_t(now);
+        std::cout << "Processing " << filePath << " started at " << std::ctime(&nowTime) << std::endl;
+        boost::iostreams::mapped_file_source file(filePath);
+
+        const char* data = file.data();
+        const char* end = data + file.size();
+        const char* lineStart = data;
+
+        while (lineStart < end) {
+            const char* lineEnd = std::find(lineStart, end, '\n');
+
+            if (lineEnd == lineStart) {
+                lineStart++;
                 continue;
+            }
 
-            int splitIdx = line.find("|");
-            std::string msgIdentifier = line.substr(0, splitIdx);
-            std::string msgStr = line.substr(splitIdx + 1);
+            const char* pipePos = std::find(lineStart, lineEnd, '|');
+            if (pipePos != lineEnd) {
+                // Find the actual end of the message data (before \r\n)
+                const char* msgEnd = lineEnd;
 
-            FIX::Message msg(msgStr);
+                // Back up past any \r characters (Windows)
+                while (msgEnd > pipePos + 1 && *(msgEnd - 1) == '\r') {
+                    msgEnd--;
+                }
 
-            processor.process(msg);
+                // Create string_view that preserves binary data including SOH
+                std::string_view msgStrView(pipePos + 1, msgEnd - pipePos - 1);
+
+                // Convert to string while preserving all binary characters
+                std::string msgStr(msgStrView.data(), msgStrView.size());
+
+                try {
+                    FIX::Message msg(msgStr);
+                    processor.process(msg);
+                }
+                catch (const std::exception& e) {
+                    std::cerr << "FIX parsing error: " << e.what() << std::endl;
+                    std::cerr << "Message was: ";
+                    for (char c : msgStr) {
+                        if (c == '\x01') std::cout << "[SOH]";
+                        else if (std::isprint(c)) std::cout << c;
+                        else std::cout << "[" << static_cast<int>(c) << "]";
+                    }
+                    std::cout << std::endl;
+                }
+            }
+
+            lineStart = lineEnd + 1;
         }
+
         currentDate.tm_mday += 1;
         if (currentDate.tm_year == endDate.tm_year && currentDate.tm_mon == endDate.tm_mon && currentDate.tm_mday == endDate.tm_mday) {
             std::cout << "Finished processing." << std::endl;
