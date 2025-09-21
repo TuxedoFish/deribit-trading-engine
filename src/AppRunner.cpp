@@ -1,4 +1,4 @@
-#include "AppRunner.h"
+#include "../include/AppRunner.h"
 
 AppRunner::AppRunner(const SimpleConfig& config) : config_{ config } {
 }
@@ -28,9 +28,11 @@ tm getDateFromString(std::string dateString) {
 
 int AppRunner::runProcessRawMarketdata() {
     // Fetch configuration
-    std::string rawFixCapturesLoc = config_.getString("md_raw_fix_file_path");
-    std::string startDateStr = config_.getString("start_date", "");
-    std::string endDateStr = config_.getString("end_date", "");
+    const std::string rawFixCapturesLoc = config_.getString("md_raw_fix_file_path");
+    const std::string processedCapturesLoc = config_.getString("md_processed_file_path");
+    const std::string dataDictionaryLoc = config_.getString("data_dictionary_file_path");
+    const std::string startDateStr = config_.getString("start_date", "");
+    const std::string endDateStr = config_.getString("end_date", "");
 
     if (startDateStr == "" || endDateStr == "") {
         std::cout << "Required start_date and end_date missing." << std::endl;
@@ -40,13 +42,16 @@ int AppRunner::runProcessRawMarketdata() {
     tm startDate = getDateFromString(startDateStr);
     tm endDate = getDateFromString(endDateStr);
     tm currentDate = startDate;
-    MessageProcessor processor{};
+    SBEBinaryWriter writer = SBEBinaryWriter();
+    MessageProcessor processor{ writer };
+    FileMessageProcessor historicalProcessor{ dataDictionaryLoc, processor, writer };
 
     // Main app loop
     while (true) {
-        std::string filePath = rawFixCapturesLoc + kPathSeparator + std::to_string(1900 + currentDate.tm_year) 
+        std::string datePath = std::to_string(1900 + currentDate.tm_year)
             + kPathSeparator + getMonthDayString(currentDate.tm_mon + 1)
-            + kPathSeparator + getMonthDayString(currentDate.tm_mday) + ".txt";
+            + kPathSeparator + getMonthDayString(currentDate.tm_mday);
+        std::string filePath = rawFixCapturesLoc + kPathSeparator + datePath + ".txt";
         if (!std::filesystem::exists(filePath)) {
             if (currentDate.tm_mday < 28) {
                 std::cout << "Could not find: " << filePath << " exiting." << std::endl;
@@ -60,9 +65,10 @@ int AppRunner::runProcessRawMarketdata() {
                 currentDate.tm_mon += 1;
                 currentDate.tm_year += 1;
             }
-            filePath = rawFixCapturesLoc + kPathSeparator + std::to_string(1900 + currentDate.tm_year)
+            datePath = std::to_string(1900 + currentDate.tm_year)
                 + kPathSeparator + getMonthDayString(currentDate.tm_mon + 1)
-                + kPathSeparator + getMonthDayString(currentDate.tm_mday) + ".txt";
+                + kPathSeparator + getMonthDayString(currentDate.tm_mday);
+            filePath = rawFixCapturesLoc + kPathSeparator + datePath + ".txt";
         }
 
         if (!std::filesystem::exists(filePath)) {
@@ -74,6 +80,7 @@ int AppRunner::runProcessRawMarketdata() {
         std::time_t nowTime = std::chrono::system_clock::to_time_t(now);
         std::cout << "Processing " << filePath << " started at " << std::ctime(&nowTime) << std::endl;
         boost::iostreams::mapped_file_source file(filePath);
+        historicalProcessor.nextFile(processedCapturesLoc + kPathSeparator + datePath);
 
         const char* data = file.data();
         const char* end = data + file.size();
@@ -104,8 +111,7 @@ int AppRunner::runProcessRawMarketdata() {
                 std::string msgStr(msgStrView.data(), msgStrView.size());
 
                 try {
-                    FIX::Message msg(msgStr);
-                    processor.process(msg);
+                    historicalProcessor.process(msgStr);
                 }
                 catch (const std::exception& e) {
                     std::cerr << "FIX parsing error: " << e.what() << std::endl;

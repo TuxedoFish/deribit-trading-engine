@@ -12,16 +12,17 @@
 #include <string_view>
 #include <filesystem>
 #include "Application.h"
-#include "SimpleConfig.h"
-#include "ApplicationPersister.h"
-#include "CmdLineOptions.h"
-#include "NullLogFactory.h"
-#include "MessageProcessor.h"
+#include "util/SimpleConfig.h"
+#include "historical/ApplicationPersister.h"
+#include "util/CmdLineOptions.h"
+#include "util/NullLogFactory.h"
+#include "marketdata/MessageProcessor.h"
 #include "quickfix/FileStore.h"
 #include "quickfix/FileLog.h"
 #include "quickfix/SocketInitiator.h"
 #include "quickfix/SessionSettings.h"
 #include "quickfix/ThreadedSSLSocketInitiator.h"
+#include "historical/FileMessageProcessor.h"
 
 const std::string kPathSeparator =
 #ifdef _WIN32

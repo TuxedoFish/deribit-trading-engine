@@ -1,4 +1,4 @@
-#include "ApplicationPersister.h"
+#include "../../include/historical/ApplicationPersister.h"
 
 ApplicationPersister::ApplicationPersister(SimpleConfig& config)
     : Application(config), m_logger(std::make_unique<MarketDataLogger>(config.getString("md_raw_fix_file_path"))) {

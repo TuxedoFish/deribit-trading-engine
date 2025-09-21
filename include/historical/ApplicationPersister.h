@@ -1,9 +1,9 @@
 // ApplicationPersister.h - Logging extension
 #pragma once
 
-#include "Application.h"
-#include "MarketDataLogger.h"
-#include "SimpleConfig.h"
+#include "../Application.h"
+#include "../marketdata/MarketDataLogger.h"
+#include "../util/SimpleConfig.h"
 #include <memory>
 #include <string>
 

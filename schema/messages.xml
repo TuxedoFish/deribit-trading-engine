@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   package="com.liversedge.messages"
+                   id="1"
+                   version="1"
+                   semanticVersion="1.0"
+                   description="Strategy - Execution/MD Messages"
+                   byteOrder="littleEndian">
+
+    <types>
+        <!-- Basic types -->
+        <composite name="messageHeader" description="Message identifiers and length of message root">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+
+        <composite name="groupSizeEncoding" description="Repeating group dimensions">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="numInGroup" primitiveType="uint16"/>
+        </composite>
+
+        <composite name="varAsciiEncoding" description="Variable length ASCII string">
+            <type name="length" primitiveType="uint16" maxValue="65534"/>
+            <type name="varData" primitiveType="uint8" length="0" characterEncoding="US-ASCII"/>
+        </composite>
+
+        <composite name="varStringEncoding" description="Variable length UTF-8 String.">
+            <type name="length" primitiveType="uint32" maxValue="1073741824"/>
+            <type name="varData" primitiveType="uint8" length="0" characterEncoding="UTF-8"/>
+        </composite>
+
+        <composite name="varDataEncoding" description="Variable length binary blob.">
+            <type name="length" primitiveType="uint32" maxValue="1073741824"/>
+            <type name="varData" primitiveType="uint8" length="0"/>
+        </composite>
+
+        <composite name="date" description="Date represented as YYYYMMDD.">
+            <field name="year" type="uint16"/>
+            <field name="month" type="uint8"/>
+            <field name="day" type="uint8"/>
+        </composite>
+
+        <enum name="settlType" encodingType="uint8">
+            <validValue name="REGULAR" description="regular">0</validValue>
+            <validValue name="W1" description="week">1</validValue>
+            <validValue name="M1" description="monthly">2</validValue>
+            <validValue name="M3" description="3 monthly">3</validValue>
+        </enum>
+
+        <enum name="securityType" encodingType="uint8">
+            <validValue name="FUT" description="future">0</validValue>
+            <validValue name="FUTCO" description="future combination">1</validValue>
+        </enum>
+
+        <enum name="status" encodingType="uint8">
+            <validValue name="INITIALIZING" description="Starting up, loading reference data.">0</validValue>
+            <validValue name="ONLINE" description="Ready for trading.">1</validValue>
+            <validValue name="CLEANUP" description="Shutting down gracefully.">2</validValue>
+            <validValue name="OFFLINE" description="Disconnected.">3</validValue>
+        </enum>
+
+        <enum name="currency" encodingType="uint8">
+            <validValue name="USD" description="us dollar">0</validValue>
+            <validValue name="BTC" description="bitcoin">1</validValue>
+            <validValue name="ETH" description="ethereum">2</validValue>
+        </enum>
+
+        <composite name="Decimal">
+            <field name="mantissa" id="1" type="int64" description="Mantissa of decimal number"/>
+            <field name="exponent" id="2" type="int8" description="Exponent of decimal number"/>
+        </composite>
+    </types>
+
+    <sbe:message name="ConnectionStatus" id="100" description="Security Definition Message">
+        <field name="timestamp" id="1" type="uint64" description="Timestamp in nanoseconds."/>
+        <field name="status" id="2" type="status" description="Current connection status."/>
+        <field name="statusText" id="3" type="varStringEncoding" description="Optional status text."/>
+    </sbe:message>
+
+    <sbe:message name="SecurityDefinition" id="101" description="Security Definition Message">
+        <field name="id" id="1" type="int32" description="Internal security identifier."/>
+        <field name="symbol" id="2" type="varStringEncoding" description="Security symbol."/>
+        <field name="currency" id="3" type="currency" description="Currency used for pricing"/>
+        <field name="commCurrency" id="4" type="currency" description="Currency used for commission"/>
+        <field name="settlCurrency" id="5" type="currency" description="Currency of settlement denomination."/>
+        <field name="settlType" id="6" type="settlType" description="Settlement period."/>
+        <field name="maturityDate" id="7" type="date" description="Date of maturity."/>
+        <field name="minPriceIncrement" id="8" type="Decimal" description="Minimum price increment."/>
+        <field name="instrumentPricePrecision" id="9" type="int8"
+               description="Number of decimal places for instrument prices."/>
+        <field name="minSizeIncrement" id="10" type="Decimal" description="Minimum size increment."/>
+        <field name="contractMultiplier" id="11" type="Decimal"
+               description="Number of USD the contract represents."/>
+        <field name="securityType" id="12" type="securityType"
+               description="Type of instrument i.e spread or outright."/>
+        <group name="legs" id="13" dimensionType="groupSizeEncoding" description="Legs for multi-leg instruments">
+            <field name="legId" id="14" type="int32" description="SecurityID of the leg instrument" />
+            <field name="legWeight" id="15" type="int16" description="Weight/ratio of this leg (e.g., +1, -1, +2)"/>
+        </group>
+    </sbe:message>
+
+</sbe:messageSchema>

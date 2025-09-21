@@ -1,4 +1,4 @@
-#include "SimpleConfig.h"
+#include "../../include/util/SimpleConfig.h"
 
 
 // Get string value

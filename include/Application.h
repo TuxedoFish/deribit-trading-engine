@@ -16,9 +16,9 @@
 #include <openssl/sha.h>
 #include <algorithm> 
 #include <vector>
-#include "AuthHandler.h"
-#include "MarketDataLogger.h"
-#include "SimpleConfig.h"
+#include "util/AuthHandler.h"
+#include "marketdata/MarketDataLogger.h"
+#include "util/SimpleConfig.h"
 
 using encoding_t = unsigned char const*;
 

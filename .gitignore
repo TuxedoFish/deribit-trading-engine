@@ -1,8 +1,12 @@
 # Visual studio
 .vs/
 
+# CLion
+.idea/
+
 # Build
 out/
+generated/
 
 # Fix
 *.log
@@ -10,5 +14,5 @@ log/
 store/
 
 # Settings
-deribit-md/config/settings.md-hist.txt
-deribit-md/config/settings.md-process.txt
+config/settings.md-hist.txt
+config/settings.md-process.txt
