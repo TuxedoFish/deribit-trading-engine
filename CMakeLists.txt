@@ -25,6 +25,9 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E make_directory ${GENERATED_DIR}
         COMMAND java -Dsbe.target.language=CPP
           -Dsbe.output.dir=${GENERATED_DIR}
+          -Dsbe.validation.warnings.fatal=true
+          -Dsbe.validation.stop.on.error=true
+          -Dsbe.xinclude.aware=true
           -jar ${SBE_JAR}
           ${SBE_SCHEMA}
         COMMAND ${CMAKE_COMMAND} -E touch ${SBE_STAMP}
@@ -38,7 +41,11 @@ find_package(OpenSSL REQUIRED)
 find_package(quickfix CONFIG REQUIRED)
 
 # Add source to this project's executable.
-add_executable (deribit-trading-engine "src/main.cpp" "include/AppRunner.h" "include/Application.h" "src/Application.cpp" "include/util/AuthHandler.h" "src/util/AuthHandler.cpp" "src/marketdata/MarketDataLogger.cpp" "include/marketdata/MarketDataLogger.h" "include/historical/ApplicationPersister.h" "src/historical/ApplicationPersister.cpp"   "include/util/CmdLineOptions.h" "src/AppRunner.cpp" "include/main.h" "include/util/SimpleConfig.h" "src/util/SimpleConfig.cpp" "include/marketdata/MessageProcessor.h" "src/marketdata/MessageProcessor.cpp" "src/historical/FileMessageProcessor.cpp" "include/historical/FileMessageProcessor.h" "include/marketdata/SBEBinaryWriter.h" "src/marketdata/SBEBinaryWriter.cpp")
+add_executable (deribit-trading-engine "src/main.cpp" "include/AppRunner.h" "include/Application.h" "src/Application.cpp" "include/util/AuthHandler.h" "src/util/AuthHandler.cpp" "src/marketdata/MarketDataLogger.cpp" "include/marketdata/MarketDataLogger.h" "include/historical/ApplicationPersister.h" "src/historical/ApplicationPersister.cpp"   "include/util/CmdLineOptions.h" "src/AppRunner.cpp" "include/main.h" "include/util/SimpleConfig.h" "src/util/SimpleConfig.cpp" "include/marketdata/MessageProcessor.h" "src/marketdata/MessageProcessor.cpp" "src/historical/FileMessageProcessor.cpp" "include/historical/FileMessageProcessor.h" "include/marketdata/SBEBinaryWriter.h" "src/marketdata/SBEBinaryWriter.cpp"
+        src/util/SBEUtils.cpp
+        include/util/SBEUtils.h
+        include/marketdata/FixCustomTags.h
+)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET deribit-trading-engine PROPERTY CXX_STANDARD 20)

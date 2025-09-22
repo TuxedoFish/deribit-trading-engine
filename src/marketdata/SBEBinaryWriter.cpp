@@ -25,63 +25,6 @@ void SBEBinaryWriter::openNewFile(const std::string& filename) {
     std::cout << "Created binary file: " << filename_ << std::endl;
 }
 
-// Write a SecurityDefinition message
-bool SBEBinaryWriter::writeSecurityDefinition(const std::string& symbol) {
-    try {
-        // Clear buffer
-        std::fill(buffer_.begin(), buffer_.end(), 0);
-
-        // Create and encode message header
-        com::liversedge::messages::MessageHeader hdr;
-        com::liversedge::messages::SecurityDefinition secDef;
-
-        hdr.wrap(buffer_.data(), 0, 0, buffer_.size())
-            .blockLength(secDef.sbeBlockLength())
-            .templateId(secDef.sbeTemplateId())
-            .schemaId(secDef.sbeSchemaId())
-            .version(secDef.sbeSchemaVersion());
-
-        // Create and encode message body
-        secDef.wrapForEncode(buffer_.data(), hdr.encodedLength(), buffer_.size());
-        com::liversedge::messages::VarStringEncoding& symbolObj = secDef.symbol();
-        symbolObj.length(static_cast<std::uint32_t>(symbol.length()));
-        // Write string data AFTER the block length AND length field
-        // Correct offset: header(8) + blockLength(4) + lengthField(4) = 16
-        std::memcpy(buffer_.data() + hdr.encodedLength() + secDef.sbeBlockLength() + secDef.symbol().lengthEncodingLength(), symbol.c_str(), symbol.length());
-
-        // Update the message position to account for variable data
-        secDef.sbePosition(secDef.sbePosition() + 4 + symbol.length());
-
-        // Calculate total message size correctly
-        size_t totalSize = hdr.encodedLength() + secDef.sbeBlockLength() + 4 + symbol.length();
-
-        // Write to file
-        file_.write(buffer_.data(), totalSize);
-        if (!file_.good()) {
-            std::cerr << "Error writing to file" << std::endl;
-            return false;
-        }
-
-        messageCount_++;
-        return true;
-
-    }
-    catch (const std::exception& e) {
-        std::cerr << "Error writing SecurityDefinition: " << e.what() << std::endl;
-        return false;
-    }
-}
-
-// Write multiple security definitions
-bool SBEBinaryWriter::writeSecurityDefinitions(const std::vector<std::string>& symbols) {
-    for (const auto& symbol : symbols) {
-        if (!writeSecurityDefinition(symbol)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 // Flush and close file
 void SBEBinaryWriter::close() {
     if (file_.is_open()) {

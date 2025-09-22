@@ -5,26 +5,31 @@ FileMessageProcessor::FileMessageProcessor(const std::string& dataDictionaryFile
 }
 
 void FileMessageProcessor::process(std::string msgStr) {
-    FIX::Message msg(msgStr, m_dataDictionary, true);
+    try
+    {
+        FIX44::Message msg = FIX::Message(msgStr, m_dataDictionary, false);
 
-    if (!m_sessionInitialized) {
-        // Extract the three required fields
-        std::string beginString = msg.getHeader().getField(FIX::FIELD::BeginString);
-        std::string senderCompID = msg.getHeader().getField(FIX::FIELD::SenderCompID);
-        std::string targetCompID = msg.getHeader().getField(FIX::FIELD::TargetCompID);
+        if (!m_sessionInitialized)
+        {
+            // Extract the three required fields
+            std::string beginString = msg.getHeader().getField(FIX::FIELD::BeginString);
+            std::string senderCompID = msg.getHeader().getField(FIX::FIELD::SenderCompID);
+            std::string targetCompID = msg.getHeader().getField(FIX::FIELD::TargetCompID);
 
-        // Create session ID
-        m_sessionID = FIX::SessionID(beginString, senderCompID, targetCompID);
-        m_sessionInitialized = true;
-    }
+            // Create session ID
+            m_sessionID = FIX::SessionID(beginString, senderCompID, targetCompID);
+            m_sessionInitialized = true;
+        }
 
-    // Get message type
-    std::string msgType = msg.getHeader().getField(FIX::FIELD::MsgType);
-
-    // Create and crack the appropriate typed message
-    if (msgType == "y") {  // SecurityList
-        FIX44::SecurityList securityList{ msg };
-        m_processor.onMessage(securityList, m_sessionID);
+        std::string msgType = msg.getHeader().getField(FIX::FIELD::MsgType);
+        if (msgType == FIX::MsgType_SecurityList)
+        {
+            m_processor.onMessage(FIX44::SecurityList(msg), m_sessionID);
+        }
+    } catch (const FIX::InvalidMessage& e)
+    {
+        std::cerr << "Invalid FIX message: " << e.what() << std::endl;
+        std::cerr << "Message string: " << msgStr << std::endl;
     }
 }
 

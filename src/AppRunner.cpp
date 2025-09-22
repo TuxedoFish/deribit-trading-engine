@@ -78,7 +78,7 @@ int AppRunner::runProcessRawMarketdata() {
 
         auto now = std::chrono::system_clock::now();
         std::time_t nowTime = std::chrono::system_clock::to_time_t(now);
-        std::cout << "Processing " << filePath << " started at " << std::ctime(&nowTime) << std::endl;
+        std::cout << "Processing " << filePath << " started at " << std::ctime(&nowTime);
         boost::iostreams::mapped_file_source file(filePath);
         historicalProcessor.nextFile(processedCapturesLoc + kPathSeparator + datePath);
 

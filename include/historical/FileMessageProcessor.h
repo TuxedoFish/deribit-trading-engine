@@ -1,8 +1,8 @@
 #pragma once
 
-#include "quickfix/Application.h"
-#include <iostream>
 #include <string>
+#include <exception>
+#include "quickfix/Application.h"
 #include "../marketdata/SBEBinaryWriter.h"
 #include "../marketdata/MessageProcessor.h"
 

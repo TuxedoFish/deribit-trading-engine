@@ -6,7 +6,10 @@
 #include "quickfix/fix44/MarketDataSnapshotFullRefresh.h"
 #include "quickfix/fix44/SecurityList.h"
 #include "SBEBinaryWriter.h"
+#include "FixCustomTags.h"
+#include "../util/SBEUtils.h"
 #include "../../generated/com_liversedge_messages/SecurityDefinition.h"
+#include "../../generated/com_liversedge_messages/SecurityType.h"
 
 class MessageProcessor : public FIX::MessageCracker
 {
@@ -23,4 +26,8 @@ public:
 
 private:
     SBEBinaryWriter& m_writer;
+    std::int32_t securityIdCounter;
+    com::liversedge::messages::SecurityDefinition m_securityDefinition;
+
+    bool isMultileg(const std::string& symbol);
 };
