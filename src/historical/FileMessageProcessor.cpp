@@ -30,6 +30,10 @@ void FileMessageProcessor::process(std::string msgStr) {
     {
         std::cerr << "Invalid FIX message: " << e.what() << std::endl;
         std::cerr << "Message string: " << msgStr << std::endl;
+    } catch (const FIX::FieldNotFound& e)
+    {
+        std::cerr << "Invalid FIX message: " << e.what() << std::endl;
+        std::cerr << "Message string: " << msgStr << std::endl;
     }
 }
 

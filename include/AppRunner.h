@@ -23,13 +23,7 @@
 #include "quickfix/SessionSettings.h"
 #include "quickfix/ThreadedSSLSocketInitiator.h"
 #include "historical/FileMessageProcessor.h"
-
-const std::string kPathSeparator =
-#ifdef _WIN32
-"\\";
-#else
-"/";
-#endif
+#include "historical/MarketdataHistoricalRunner.h"
 
 class AppRunner
 {
