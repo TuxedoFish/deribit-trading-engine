@@ -27,7 +27,105 @@ void MessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& mes
         return;
     }
 
-    // TODO: Publish initial order book as snapshot - app should process a snapshot before it starts up
+    // Check if this is a trade snapshot by checking first entry (all entries are same type)
+    FIX::NoMDEntries noMDEntriesField;
+    message.get(noMDEntriesField);
+    int noMDEntries = noMDEntriesField.getValue();
+
+    if (noMDEntries == 0)
+    {
+        // No entries
+        return;
+    }
+
+    if (noMDEntries > 0)
+    {
+        FIX44::MarketDataSnapshotFullRefresh::NoMDEntries firstEntry;
+        message.getGroup(1, firstEntry);
+
+        FIX::MDEntryType mdEntryType;
+        firstEntry.get(mdEntryType);
+
+        if (mdEntryType.getValue() == FIX::MDEntryType_TRADE)
+        {
+            // This is a trade snapshot, ignore it entirely
+            return;
+        }
+    }
+
+    // Prepare MDFullBook message
+    if (!m_writer.prepareMessage(m_mdFullBook))
+    {
+        std::cerr << "Error preparing MDFullBook message" << std::endl;
+        return;
+    }
+
+    m_mdFullBook.securityId(securityId);
+    m_mdFullBook.timestamp(timestamp);
+
+    // First count bid/ask entries
+    int bidCount = 0;
+    int askCount = 0;
+    for (int i = 1; i <= noMDEntries; i++)
+    {
+        FIX44::MarketDataSnapshotFullRefresh::NoMDEntries entry;
+        message.getGroup(i, entry);
+
+        FIX::MDEntryType mdEntryType;
+        entry.get(mdEntryType);
+
+        mdEntryType.getValue() == FIX::MDEntryType_BID ? bidCount++ : 0;
+        mdEntryType.getValue() == FIX::MDEntryType_OFFER ? askCount++ : 0;
+    }
+
+    // Process bid entries first
+    auto nBidLevels = std::min(MAX_LEVELS, bidCount);
+    auto bidLevels = m_mdFullBook.bidLevelsCount(nBidLevels);
+    auto bidIdx = 0;
+    for (int i = 1; i <= noMDEntries && bidIdx < nBidLevels; i++)
+    {
+        FIX44::MarketDataSnapshotFullRefresh::NoMDEntries entry;
+        message.getGroup(i, entry);
+
+        FIX::MDEntryType mdEntryType;
+        entry.get(mdEntryType);
+
+        if (mdEntryType == FIX::MDEntryType_BID)
+        {
+            auto bidLevel = bidLevels.next();
+            SBEUtils::setPrice(bidLevel.price(), entry.getField(FIX::FIELD::MDEntryPx));
+            SBEUtils::setQty(bidLevel.qty(), entry.getField(FIX::FIELD::MDEntrySize));
+            bidIdx++;
+        }
+    }
+
+    // Process ask entries second
+    auto nAskLevels = std::min(MAX_LEVELS, askCount);
+    auto askLevels = m_mdFullBook.askLevelsCount(nAskLevels);
+    auto askIdx = 0;
+    for (int i = 1; i <= noMDEntries && askIdx < nAskLevels; i++)
+    {
+        FIX44::MarketDataSnapshotFullRefresh::NoMDEntries entry;
+        message.getGroup(i, entry);
+
+        FIX::MDEntryType mdEntryType;
+        entry.get(mdEntryType);
+
+        if (mdEntryType == FIX::MDEntryType_OFFER)
+        {
+            auto askLevel = askLevels.next();
+            SBEUtils::setPrice(askLevel.price(), entry.getField(FIX::FIELD::MDEntryPx));
+            SBEUtils::setQty(askLevel.qty(), entry.getField(FIX::FIELD::MDEntrySize));
+            askIdx++;
+        }
+    }
+
+    // Write the message
+    if (!m_writer.writeMessage(m_mdFullBook))
+    {
+        std::cerr << "Error writing MDFullBook message" << std::endl;
+        return;
+    }
 
     // Send out SecurityStatus - Online afterwards
     UpdateSecurityStatus(securityId, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::ONLINE);

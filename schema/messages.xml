@@ -80,6 +80,22 @@
             <validValue name="BTC" description="bitcoin">1</validValue>
             <validValue name="ETH" description="ethereum">2</validValue>
         </enum>
+
+        <enum name="MDUpdateType" encodingType="uint8">
+            <validValue name="BOOK_UPDATE" description="Order book level update">0</validValue>
+            <validValue name="TRADE" description="Trade execution">1</validValue>
+        </enum>
+
+        <enum name="MDSide" encodingType="uint8">
+            <validValue name="BID" description="Bid side">0</validValue>
+            <validValue name="ASK" description="Ask side">1</validValue>
+        </enum>
+
+        <enum name="MDUpdateAction" encodingType="uint8">
+            <validValue name="NEW" description="New level">0</validValue>
+            <validValue name="CHANGE" description="Update existing level">1</validValue>
+            <validValue name="DELETE" description="Remove level">2</validValue>
+        </enum>
     </types>
 
     <sbe:message name="ConnectionStatus" id="100" description="Security Definition Message">
@@ -110,6 +126,30 @@
         <field name="timestamp" id="1" type="uint64" description="Timestamp in nanoseconds."/>
         <field name="status" id="2" type="SecurityStatusEnum" description="Current symbol Status."/>
         <field name="securityId" id="4" type="int32" description="Internal security identifier."/>
+    </sbe:message>
+
+    <sbe:message name="MDUpdate" id="103" description="Market Data Incremental Update">
+        <field name="securityId" id="1" type="int32" description="Internal security identifier."/>
+        <field name="timestamp" id="2" type="uint64" description="Timestamp in nanoseconds."/>
+        <field name="updateType" id="3" type="MDUpdateType" description="Type of market data update."/>
+        <field name="side" id="4" type="MDSide" description="Side of the market."/>
+        <field name="price" id="5" type="Price" description="Price level."/>
+        <field name="qty" id="6" type="Qty" description="Quantity at price level."/>
+        <field name="action" id="7" type="MDUpdateAction" presence="optional" description="Action for book updates (ignored for trades)."/>
+        <field name="tradeId" id="8" type="uint64" presence="optional" description="Trade identifier (only for trade updates)."/>
+    </sbe:message>
+
+    <sbe:message name="MDFullBook" id="104" description="Market Data Full Book Snapshot">
+        <field name="securityId" id="1" type="int32" description="Internal security identifier."/>
+        <field name="timestamp" id="2" type="uint64" description="Timestamp in nanoseconds."/>
+        <group name="bidLevels" id="3" dimensionType="GroupSizeEncoding" description="Bid levels">
+            <field name="price" id="1" type="Price" description="Bid price."/>
+            <field name="qty" id="2" type="Qty" description="Bid quantity."/>
+        </group>
+        <group name="askLevels" id="4" dimensionType="GroupSizeEncoding" description="Ask levels">
+            <field name="price" id="1" type="Price" description="Ask price."/>
+            <field name="qty" id="2" type="Qty" description="Ask quantity."/>
+        </group>
     </sbe:message>
 
 </sbe:messageSchema>

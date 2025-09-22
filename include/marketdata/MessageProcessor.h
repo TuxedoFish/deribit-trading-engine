@@ -17,12 +17,16 @@
 #include "../../generated/com_liversedge_messages/SecurityStatus.h"
 #include "../../generated/com_liversedge_messages/SecurityType.h"
 #include "../../generated/com_liversedge_messages/ConnectionStatus.h"
+#include "../../generated/com_liversedge_messages/MDFullBook.h"
 
 struct SecurityInfo
 {
     std::string symbol;
     com::liversedge::messages::SecurityStatusEnum::Value status;
 };
+
+// Caps levels to 5000 to ensure they fit in 128kb buffer
+constexpr int MAX_LEVELS = 5000;
 
 class MessageProcessor : public FIX::MessageCracker
 {
@@ -45,6 +49,7 @@ private:
     com::liversedge::messages::ConnectionStatus m_connectionStatus;
     com::liversedge::messages::SecurityDefinition m_securityDefinition;
     com::liversedge::messages::SecurityStatus m_securityStatus;
+    com::liversedge::messages::MDFullBook m_mdFullBook;
 
     bool UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::Value value, std::uint64_t timestamp);
     bool UpdateSecurityStatus(int securityId, std::uint64_t timestamp, com::liversedge::messages::SecurityStatusEnum::Value newStatus);

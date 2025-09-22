@@ -16,7 +16,7 @@ private:
     size_t messageCount_;
     std::vector<char> buffer_;
 
-    static constexpr size_t BUFFER_SIZE = 1024; // Adjust based on max message size
+    static constexpr size_t BUFFER_SIZE = 131072;
 
 public:
     SBEBinaryWriter();
