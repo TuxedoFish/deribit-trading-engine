@@ -1,14 +1,36 @@
 #include "../../include/marketdata/MessageProcessor.h"
 
 MessageProcessor::MessageProcessor(SBEBinaryWriter& writer)
-    : m_writer(writer), securityIdCounter(1)
+    : m_writer(writer), securityIdCounter(0)
 {
+    // Initialize state
+    securitiesInfo.assign(100, SecurityInfo{});
 }
 
 void MessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& message, const FIX::SessionID& sessionID)
 {
-    // Publish initial order book as snapshot - app should process a snapshot before it starts up
+    const uint64_t timestamp = GetSendingTime(static_cast<FIX44::Message>(message));
+
+    int securityId = -1;
+    const std::string& symbol = message.getField(FIX::FIELD::Symbol);
+    for (int i = 0; i < securityIdCounter; i++)
+    {
+        if (securitiesInfo[i].symbol == symbol)
+        {
+            securityId = i;
+            break;
+        }
+    }
+    if (securityId == -1)
+    {
+        std::cerr << "No matching security found for " << symbol << std::endl;
+        return;
+    }
+
+    // TODO: Publish initial order book as snapshot - app should process a snapshot before it starts up
+
     // Send out SecurityStatus - Online afterwards
+    UpdateSecurityStatus(securityId, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::ONLINE);
 }
 
 void MessageProcessor::onMessage(const FIX44::MarketDataIncrementalRefresh& message, const FIX::SessionID& sessionID)
@@ -18,6 +40,8 @@ void MessageProcessor::onMessage(const FIX44::MarketDataIncrementalRefresh& mess
 
 void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::SessionID& sessionID)
 {
+    const uint64_t timestamp = GetSendingTime(static_cast<FIX44::Message>(message));
+
     // Message contains multiple entries for each security
     FIX::NoRelatedSym noSecuritiesField;
     message.get(noSecuritiesField);
@@ -36,6 +60,9 @@ void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::
         }
 
         // Give the security an internal identifier
+        securitiesInfo[securityIdCounter].symbol = security.getField(FIX::FIELD::Symbol);
+        securitiesInfo[securityIdCounter].status = com::liversedge::messages::SecurityStatusEnum::Value::NULL_VALUE;
+        uint32_t id = securityIdCounter;
         m_securityDefinition.id(securityIdCounter);
         securityIdCounter++;
 
@@ -50,6 +77,7 @@ void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::
         SBEUtils::setQty(m_securityDefinition.minSizeIncrement(), security.getField(FIXCustomTags::MinSizeIncrement));
         SBEUtils::setPrice(m_securityDefinition.contractMultiplier(), security.getField(FIX::FIELD::ContractMultiplier));
         m_securityDefinition.securityType(SBEUtils::securityTypeFromString(security.getField(FIX::FIELD::SecurityType)));
+        m_securityDefinition.timestamp(timestamp);
 
         // Variable length fields
         SBEUtils::setVarString(m_securityDefinition.symbol(), security.getField(FIX::FIELD::Symbol));
@@ -58,6 +86,14 @@ void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::
         if (!m_writer.writeMessage(m_securityDefinition))
         {
             std::cerr << "Error writing security definition" << std::endl;
+            securityIdCounter--;
+            continue;
+        }
+
+        // Send the security status update
+        if (!UpdateSecurityStatus(id, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::PENDING_SNAPSHOT))
+        {
+            std::cerr << "Error updating security definition to PENDING_SNAPSHOT" << std::endl;
         }
     }
     m_writer.flush();
@@ -65,7 +101,25 @@ void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::
 
 void MessageProcessor::onMessage(const FIX44::Logout& message, const FIX::SessionID& sessionID)
 {
-    // Send out SecurityStatus - Offline for all securities
+    std::cout << "Processing FIX44::Logout message" << std::endl;
+    const uint64_t timestamp = GetSendingTime(static_cast<FIX44::Message>(message));
+    InvalidateState(timestamp);
+}
+
+void MessageProcessor::onMessage(const FIX44::Logon& message, const FIX::SessionID& sessionID)
+{
+    std::cout << "Processing FIX44::Logon message" << std::endl;
+    const uint64_t timestamp = GetSendingTime(static_cast<FIX44::Message>(message));
+
+    if (securityIdCounter != 0)
+    {
+        // Indicates that the marketdata was not safely shutdown
+        std::cerr << "Received Logon before Logout, invalidating the state" << std::endl;
+        InvalidateState(timestamp);
+    }
+
+    // Send out ConnectionStatus - Offline
+    UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::ONLINE, timestamp);
 }
 
 void MessageProcessor::onMessage(const FIX44::MarketDataRequest& message, const FIX::SessionID& sessionID)
@@ -76,12 +130,79 @@ void MessageProcessor::onMessage(const FIX44::MarketDataRequestReject& message, 
 {
 }
 
-bool MessageProcessor::isMultileg(const std::string& symbol)
+bool MessageProcessor::InvalidateState(std::uint64_t timestamp)
 {
-    if (symbol.find("-FS-") != std::string::npos)
+    // Send out SecurityStatus - Offline for all securities
+    for (int i = 0; i < securityIdCounter; i++)
     {
-        // Future spread
-        return true;
+        UpdateSecurityStatus(i, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::OFFLINE);
     }
-    return false;
+
+    // Send out ConnectionStatus - Offline
+    UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::OFFLINE, timestamp);
+
+    // Reset symbol state
+    securityIdCounter = 0;
+    return true;
 }
+
+bool MessageProcessor::UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::Value value, const std::uint64_t timestamp)
+{
+    if (!m_writer.prepareMessage(m_connectionStatus))
+    {
+        std::cerr << "Error preparing connection status update" << std::endl;
+        return false;
+    }
+
+    m_connectionStatus.status(value);
+    m_connectionStatus.timestamp(timestamp);
+
+    if (!m_writer.writeMessage(m_connectionStatus))
+    {
+        std::cerr << "Error writing connection status update" << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+bool MessageProcessor::UpdateSecurityStatus(int securityId, const std::uint64_t timestamp, com::liversedge::messages::SecurityStatusEnum::Value newStatus)
+{
+    if (securityId >= securityIdCounter)
+    {
+        std::cerr << "Error security " << securityId << "not found" << std::endl;
+        return false;
+    }
+    if (securitiesInfo[securityId].status == newStatus)
+    {
+        // No change don't send
+        return false;
+    }
+    if (!m_writer.prepareMessage(m_securityStatus))
+    {
+        std::cerr << "Error preparing security status update" << std::endl;
+        return false;
+    }
+
+    m_securityStatus.securityId(securityId);
+    m_securityStatus.timestamp(timestamp);
+    m_securityStatus.status(newStatus);
+    securitiesInfo[securityId].status = newStatus;
+
+    if (!m_writer.writeMessage(m_securityStatus))
+    {
+        std::cerr << "Error writing security status update" << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+uint64_t MessageProcessor::GetSendingTime(FIX44::Message message)
+{
+    FIX::SendingTime sendingTimeField;
+    message.getHeader().get(sendingTimeField);
+    FIX::UtcTimeStamp sendingTime = sendingTimeField.getValue();
+    return FixUtils::convertFIXTimeToNanos(sendingTime);
+}
+

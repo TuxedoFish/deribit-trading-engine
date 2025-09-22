@@ -18,15 +18,16 @@ MarketDataLogger::~MarketDataLogger() {
 }
 
 void MarketDataLogger::writeToLog(const std::string& direction, const FIX::Message& message) {
+    // ATOMIC OPERATION: Hold lock for entire write process
+    std::lock_guard<std::mutex> lock(m_logMutex);
+
     try {
-        ensureLogFileOpen();
+        // Ensure file is open (without additional locking)
+        ensureLogFileOpenUnsafe();
 
         if (m_logFile.is_open()) {
-            std::lock_guard<std::mutex> lock(m_logMutex);
-
             // Write: DIRECTION|RAW_FIX_MESSAGE
             m_logFile << direction << "|" << message.toString() << std::endl;
-
             m_logFile.flush();  // Ensure immediate write
         }
     }
@@ -81,9 +82,8 @@ std::string MarketDataLogger::getCurrentDateString() const {
     return ss.str();
 }
 
-void MarketDataLogger::ensureLogFileOpen() {
-    std::lock_guard<std::mutex> lock(m_logMutex);
-
+void MarketDataLogger::ensureLogFileOpenUnsafe() {
+    // NOTE: This function assumes the caller already holds m_logMutex
     std::string currentDate = getCurrentDateString();
 
     // Check if we need to rotate to a new file

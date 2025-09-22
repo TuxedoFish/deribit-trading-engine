@@ -38,7 +38,7 @@ private:
 
     // Helper methods
     std::string getCurrentDateString() const;
-    void ensureLogFileOpen();
+    void ensureLogFileOpenUnsafe();  // Assumes caller holds mutex
     void closeCurrentLogFile();
     std::string formatTimestamp() const;
     std::string buildLogFilePath(const std::string& dateString) const;

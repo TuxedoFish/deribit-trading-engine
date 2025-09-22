@@ -45,6 +45,8 @@ add_executable (deribit-trading-engine "src/main.cpp" "include/AppRunner.h" "inc
         src/util/SBEUtils.cpp
         include/util/SBEUtils.h
         include/marketdata/FixCustomTags.h
+        src/marketdata/FixUtils.cpp
+        include/marketdata/FixUtils.h
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)

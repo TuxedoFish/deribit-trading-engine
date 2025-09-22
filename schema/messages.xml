@@ -49,7 +49,7 @@
 
         <composite name="Price">
             <type name="mantissa" primitiveType="int64" description="Mantissa of Decimal number"/>
-            <type name="exponent" primitiveType="int8" presence="constant" description="Exponent of Decimal number">-4</type>
+            <type name="exponent" primitiveType="int8" presence="constant" description="Exponent of Decimal number">-8</type>
         </composite>
 
         <enum name="SettlType" encodingType="uint8">
@@ -64,11 +64,15 @@
             <validValue name="FUTCO" description="future combination">1</validValue>
         </enum>
 
-        <enum name="Status" encodingType="uint8">
-            <validValue name="INITIALIZING" description="Starting up, loading reference data.">0</validValue>
-            <validValue name="ONLINE" description="Ready for trading.">1</validValue>
-            <validValue name="CLEANUP" description="Shutting down gracefully.">2</validValue>
-            <validValue name="OFFLINE" description="Disconnected.">3</validValue>
+        <enum name="ConnectionStatusEnum" encodingType="uint8">
+            <validValue name="ONLINE" description="Ready for trading.">0</validValue>
+            <validValue name="OFFLINE" description="Disconnected.">1</validValue>
+        </enum>
+
+        <enum name="SecurityStatusEnum" encodingType="uint8">
+            <validValue name="PENDING_SNAPSHOT" description="Symbol is pending initial snapshot.">0</validValue>
+            <validValue name="ONLINE" description="Connected and streaming.">1</validValue>
+            <validValue name="OFFLINE" description="Disconnected and not streaming.">2</validValue>
         </enum>
 
         <enum name="Currency" encodingType="uint8">
@@ -80,8 +84,7 @@
 
     <sbe:message name="ConnectionStatus" id="100" description="Security Definition Message">
         <field name="timestamp" id="1" type="uint64" description="Timestamp in nanoseconds."/>
-        <field name="status" id="2" type="Status" description="Current connection Status."/>
-        <field name="statusText" id="3" type="VarStringEncoding" description="Optional Status text."/>
+        <field name="status" id="2" type="ConnectionStatusEnum" description="Current connection Status."/>
     </sbe:message>
 
     <sbe:message name="SecurityDefinition" id="101" description="Security Definition Message">
@@ -99,7 +102,14 @@
                description="Number of USD the contract represents."/>
         <field name="securityType" id="12" type="SecurityType"
                description="Type of instrument i.e spread or outright."/>
+        <field name="timestamp" id="13" type="uint64" description="Timestamp in nanoseconds."/>
         <field name="symbol" id="2" type="VarStringEncoding" description="Security symbol."/>
+    </sbe:message>
+
+    <sbe:message name="SecurityStatus" id="102" description="Security Definition Message">
+        <field name="timestamp" id="1" type="uint64" description="Timestamp in nanoseconds."/>
+        <field name="status" id="2" type="SecurityStatusEnum" description="Current symbol Status."/>
+        <field name="securityId" id="4" type="int32" description="Internal security identifier."/>
     </sbe:message>
 
 </sbe:messageSchema>

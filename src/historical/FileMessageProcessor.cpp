@@ -25,6 +25,18 @@ void FileMessageProcessor::process(std::string msgStr) {
         if (msgType == FIX::MsgType_SecurityList)
         {
             m_processor.onMessage(FIX44::SecurityList(msg), m_sessionID);
+        } else if (msgType == FIX::MsgType_Logon)
+        {
+            m_processor.onMessage(FIX44::Logon(msg), m_sessionID);
+        } else if (msgType == FIX::MsgType_Logout)
+        {
+            m_processor.onMessage(FIX44::Logout(msg), m_sessionID);
+        } else if (msgType == FIX::MsgType_MarketDataIncrementalRefresh)
+        {
+            m_processor.onMessage(FIX44::MarketDataIncrementalRefresh(msg), m_sessionID);
+        } else if (msgType == FIX::MsgType_MarketDataSnapshotFullRefresh)
+        {
+            m_processor.onMessage(FIX44::MarketDataSnapshotFullRefresh(msg), m_sessionID);
         }
     } catch (const FIX::InvalidMessage& e)
     {
