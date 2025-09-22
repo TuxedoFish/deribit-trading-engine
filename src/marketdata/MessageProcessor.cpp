@@ -133,7 +133,111 @@ void MessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& mes
 
 void MessageProcessor::onMessage(const FIX44::MarketDataIncrementalRefresh& message, const FIX::SessionID& sessionID)
 {
-    // Parse incremental refreshes into trades and book updates
+    const uint64_t timestamp = GetSendingTime(static_cast<FIX44::Message>(message));
+
+    // Get symbol and find security ID
+    const std::string& symbol = message.getField(FIX::FIELD::Symbol);
+    int securityId = -1;
+    for (int i = 0; i < securityIdCounter; i++)
+    {
+        if (securitiesInfo[i].symbol == symbol)
+        {
+            securityId = i;
+            break;
+        }
+    }
+
+    if (securityId == -1)
+    {
+        std::cerr << "No matching security found for incremental update: " << symbol << std::endl;
+        return;
+    }
+
+    // Check security status is ONLINE
+    if (securitiesInfo[securityId].status != com::liversedge::messages::SecurityStatusEnum::Value::ONLINE)
+    {
+        std::cerr << "Ignoring incremental update for offline security: " << symbol << std::endl;
+        return;
+    }
+
+    // Get number of MD entries
+    FIX::NoMDEntries noMDEntriesField;
+    message.get(noMDEntriesField);
+    int noMDEntries = noMDEntriesField.getValue();
+
+    if (noMDEntries == 0)
+    {
+        return;
+    }
+
+    // Process each MD entry
+    for (int i = 1; i <= noMDEntries; i++)
+    {
+        FIX44::MarketDataIncrementalRefresh::NoMDEntries entry;
+        message.getGroup(i, entry);
+
+        // Prepare MDUpdate message
+        if (!m_writer.prepareMessage(m_mdUpdate))
+        {
+            std::cerr << "Error preparing MDUpdate message" << std::endl;
+            continue;
+        }
+
+        m_mdUpdate.securityId(securityId);
+        m_mdUpdate.timestamp(timestamp);
+
+        // Get entry type and classify
+        FIX::MDEntryType mdEntryType;
+        entry.get(mdEntryType);
+
+        if (mdEntryType.getValue() == FIX::MDEntryType_BID)
+        {
+            // Bid book update
+            m_mdUpdate.updateType(com::liversedge::messages::MDUpdateType::BOOK_UPDATE);
+            m_mdUpdate.side(com::liversedge::messages::MDSide::BID);
+            m_mdUpdate.action(com::liversedge::messages::MDUpdateAction::CHANGE);
+            SBEUtils::setPrice(m_mdUpdate.price(), entry.getField(FIX::FIELD::MDEntryPx));
+            SBEUtils::setQty(m_mdUpdate.qty(), entry.getField(FIX::FIELD::MDEntrySize));
+        }
+        else if (mdEntryType.getValue() == FIX::MDEntryType_OFFER)
+        {
+            // Ask book update
+            m_mdUpdate.updateType(com::liversedge::messages::MDUpdateType::BOOK_UPDATE);
+            m_mdUpdate.side(com::liversedge::messages::MDSide::ASK);
+            m_mdUpdate.action(com::liversedge::messages::MDUpdateAction::CHANGE);
+            SBEUtils::setPrice(m_mdUpdate.price(), entry.getField(FIX::FIELD::MDEntryPx));
+            SBEUtils::setQty(m_mdUpdate.qty(), entry.getField(FIX::FIELD::MDEntrySize));
+        }
+        else if (mdEntryType.getValue() == FIX::MDEntryType_TRADE)
+        {
+            // Trade execution
+            m_mdUpdate.updateType(com::liversedge::messages::MDUpdateType::TRADE);
+            SBEUtils::setPrice(m_mdUpdate.price(), entry.getField(FIX::FIELD::MDEntryPx));
+            SBEUtils::setQty(m_mdUpdate.qty(), entry.getField(FIX::FIELD::MDEntrySize));
+
+            // Set trade side (what the taker was doing)
+            FIX::Side side;
+            entry.getField(side);
+            m_mdUpdate.side(side.getValue() == FIX::Side_BUY ? com::liversedge::messages::MDSide::ASK : com::liversedge::messages::MDSide::BID);
+
+            // Set trade ID if available (optional field)
+            if (entry.isSetField(FIX::FIELD::MDEntryID))
+            {
+                m_mdUpdate.tradeId(std::stoull(entry.getField(FIX::FIELD::MDEntryID)));
+            }
+        }
+        else
+        {
+            // Unknown entry type, skip
+            continue;
+        }
+
+        // Write the MDUpdate message
+        if (!m_writer.writeMessage(m_mdUpdate))
+        {
+            std::cerr << "Error writing MDUpdate message" << std::endl;
+        }
+    }
 }
 
 void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::SessionID& sessionID)

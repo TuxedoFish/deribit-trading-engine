@@ -18,6 +18,7 @@
 #include "../../generated/com_liversedge_messages/SecurityType.h"
 #include "../../generated/com_liversedge_messages/ConnectionStatus.h"
 #include "../../generated/com_liversedge_messages/MDFullBook.h"
+#include "../../generated/com_liversedge_messages/MDUpdate.h"
 
 struct SecurityInfo
 {
@@ -50,6 +51,7 @@ private:
     com::liversedge::messages::SecurityDefinition m_securityDefinition;
     com::liversedge::messages::SecurityStatus m_securityStatus;
     com::liversedge::messages::MDFullBook m_mdFullBook;
+    com::liversedge::messages::MDUpdate m_mdUpdate;
 
     bool UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::Value value, std::uint64_t timestamp);
     bool UpdateSecurityStatus(int securityId, std::uint64_t timestamp, com::liversedge::messages::SecurityStatusEnum::Value newStatus);
