@@ -31,7 +31,7 @@ void Application::toAdmin(FIX::Message& message, const FIX::SessionID& sessionID
         std::string secret = config_.getString("deribit_client_secret");
 
         // Creates the raw data
-        std::chrono::milliseconds ms = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+        std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
         std::string timestamp_in_ms = std::to_string(ms.count());
         
         // Creating the random nonce (32 random bytes encoded in base64)

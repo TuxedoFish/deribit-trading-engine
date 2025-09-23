@@ -7,7 +7,7 @@ FileMessageProcessor::FileMessageProcessor(const std::string& dataDictionaryFile
 void FileMessageProcessor::process(std::string msgStr) {
     try
     {
-        FIX44::Message msg = FIX::Message(msgStr, m_dataDictionary, false);
+        auto msg = FIX::Message(msgStr, m_dataDictionary, true);
 
         if (!m_sessionInitialized)
         {
@@ -44,7 +44,11 @@ void FileMessageProcessor::process(std::string msgStr) {
         std::cerr << "Message string: " << msgStr << std::endl;
     } catch (const FIX::FieldNotFound& e)
     {
-        std::cerr << "Invalid FIX message: " << e.what() << std::endl;
+        std::cerr << "Field not found in FIX message: " << e.what() << std::endl;
+        std::cerr << "Message string: " << msgStr << std::endl;
+    } catch (const std::exception& e)
+    {
+        std::cerr << "Error processing FIX message: " << e.what() << std::endl;
         std::cerr << "Message string: " << msgStr << std::endl;
     }
 }

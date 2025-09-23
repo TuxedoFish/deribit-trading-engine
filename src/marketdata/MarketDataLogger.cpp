@@ -5,9 +5,9 @@ MarketDataLogger::MarketDataLogger(const std::string& logDirectory)
 
     // Create the base log directory if it doesn't exist
     try {
-        std::filesystem::create_directories(m_logDirectory);
+        boost::filesystem::create_directories(m_logDirectory);
     }
-    catch (const std::filesystem::filesystem_error& e) {
+    catch (const boost::filesystem::filesystem_error& e) {
         std::cerr << "Warning: Failed to create log directory '"
             << m_logDirectory << "': " << e.what() << std::endl;
     }
@@ -45,9 +45,9 @@ void MarketDataLogger::setLogDirectory(const std::string& directory) {
     // Update directory and create if needed
     m_logDirectory = directory;
     try {
-        std::filesystem::create_directories(m_logDirectory);
+        boost::filesystem::create_directories(m_logDirectory);
     }
-    catch (const std::filesystem::filesystem_error& e) {
+    catch (const boost::filesystem::filesystem_error& e) {
         std::cerr << "Warning: Failed to create log directory '"
             << m_logDirectory << "': " << e.what() << std::endl;
     }
@@ -98,7 +98,7 @@ void MarketDataLogger::ensureLogFileOpenUnsafe() {
             std::string year = currentDate.substr(0, 4);
             std::string month = currentDate.substr(5, 2);
             std::string directoryPath = m_logDirectory + "/" + year + "/" + month;
-            std::filesystem::create_directories(directoryPath);
+            boost::filesystem::create_directories(directoryPath);
 
             // Open new file
             std::string filename = buildLogFilePath(currentDate);
@@ -113,7 +113,7 @@ void MarketDataLogger::ensureLogFileOpenUnsafe() {
             }
 
         }
-        catch (const std::filesystem::filesystem_error& e) {
+        catch (const boost::filesystem::filesystem_error& e) {
             std::cerr << "Filesystem error creating log directories: " << e.what() << std::endl;
         }
         catch (const std::exception& e) {

@@ -32,7 +32,7 @@ std::string MarketdataHistoricalRunner::findValidFilePath(const std::string& raw
         + kPathSeparator + getMonthDayString(currentDate.tm_mday);
     std::string filePath = rawFixCapturesLoc + kPathSeparator + datePath + ".txt";
 
-    if (!std::filesystem::exists(filePath)) {
+    if (!boost::filesystem::exists(filePath)) {
         if (currentDate.tm_mday < 28) {
             return ""; // Signal file not found
         }
@@ -63,8 +63,8 @@ size_t MarketdataHistoricalRunner::countTotalLines(const char* data, const char*
     return totalLines;
 }
 
-std::string MarketdataHistoricalRunner::getStringSafe(std::string_view msgStrView) {
-    std::string msgStr(msgStrView.data(), msgStrView.size());
+std::string MarketdataHistoricalRunner::getStringSafe(const char* data, size_t size) {
+    std::string msgStr(data, size);
 
     bool hasNullBytes = false;
     std::string cleanedMsgStr;
@@ -138,7 +138,7 @@ int MarketdataHistoricalRunner::run() {
     tm startDate = getDateFromString(startDateStr);
     tm endDate = getDateFromString(endDateStr);
     tm currentDate = startDate;
-    SBEBinaryWriter writer = SBEBinaryWriter();
+    SBEBinaryWriter writer{};
     MessageProcessor processor{ writer };
     FileMessageProcessor historicalProcessor{ dataDictionaryLoc, processor, writer };
 
@@ -146,7 +146,7 @@ int MarketdataHistoricalRunner::run() {
     while (true) {
         std::string filePath = findValidFilePath(rawFixCapturesLoc, currentDate);
 
-        if (filePath.empty() || !std::filesystem::exists(filePath)) {
+        if (filePath.empty() || !boost::filesystem::exists(filePath)) {
             std::cout << "Could not find: " << filePath << " exiting." << std::endl;
             break;
         }
@@ -197,10 +197,9 @@ int MarketdataHistoricalRunner::run() {
                 }
 
                 // Create string_view that preserves binary data including SOH
-                std::string_view msgStrView(pipePos + 1, msgEnd - pipePos - 1);
 
                 // Convert to string while checking for null bytes and filtering them
-                std::string msgStr = getStringSafe(msgStrView);
+                std::string msgStr = getStringSafe(pipePos + 1, msgEnd - pipePos - 1);
 
                 // Skip processing if message was corrupted (contains null bytes)
                 if (msgStr.empty()) {

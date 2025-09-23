@@ -11,7 +11,7 @@ endif()
 
 project ("deribit-trading-engine")
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 14)
 
 # Define generated files
 set(GENERATED_DIR ${CMAKE_SOURCE_DIR}/generated)
@@ -36,10 +36,6 @@ add_custom_command(
 )
 add_custom_target(generate_sbe_code DEPENDS ${SBE_STAMP})
 
-# Dependencies
-find_package(OpenSSL REQUIRED)
-find_package(quickfix CONFIG REQUIRED)
-
 # Add source to this project's executable.
 add_executable (deribit-trading-engine "src/main.cpp" "include/AppRunner.h" "include/Application.h" "src/Application.cpp" "include/util/AuthHandler.h" "src/util/AuthHandler.cpp" "src/marketdata/MarketDataLogger.cpp" "include/marketdata/MarketDataLogger.h" "include/historical/ApplicationPersister.h" "src/historical/ApplicationPersister.cpp"   "include/util/CmdLineOptions.h" "src/AppRunner.cpp" "include/main.h" "include/util/SimpleConfig.h" "src/util/SimpleConfig.cpp" "include/marketdata/MessageProcessor.h" "src/marketdata/MessageProcessor.cpp" "src/historical/FileMessageProcessor.cpp" "include/historical/FileMessageProcessor.h" "src/historical/MarketdataHistoricalRunner.cpp" "include/marketdata/SBEBinaryWriter.h" "src/marketdata/SBEBinaryWriter.cpp"
         src/util/SBEUtils.cpp
@@ -50,13 +46,13 @@ add_executable (deribit-trading-engine "src/main.cpp" "include/AppRunner.h" "inc
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET deribit-trading-engine PROPERTY CXX_STANDARD 20)
+  set_property(TARGET deribit-trading-engine PROPERTY CXX_STANDARD 14)
 endif()
 
 # Dependencies
 find_package(OpenSSL REQUIRED)
 find_package(quickfix CONFIG REQUIRED)
-find_package(Boost REQUIRED COMPONENTS iostreams)
+find_package(Boost REQUIRED COMPONENTS iostreams filesystem system)
 
 if(WIN32)
   target_link_libraries(deribit-trading-engine
@@ -70,7 +66,7 @@ endif()
 
 target_link_libraries(deribit-trading-engine
         ${OPENSSL_LIBRARIES} quickfix
-        Boost::iostreams
+        Boost::iostreams Boost::filesystem Boost::system
 )
 
 # Generated code

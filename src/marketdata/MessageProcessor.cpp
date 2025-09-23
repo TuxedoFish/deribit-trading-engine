@@ -195,7 +195,6 @@ void MessageProcessor::onMessage(const FIX44::MarketDataIncrementalRefresh& mess
             // Bid book update
             m_mdUpdate.updateType(com::liversedge::messages::MDUpdateType::BOOK_UPDATE);
             m_mdUpdate.side(com::liversedge::messages::MDSide::BID);
-            m_mdUpdate.action(com::liversedge::messages::MDUpdateAction::CHANGE);
             SBEUtils::setPrice(m_mdUpdate.price(), entry.getField(FIX::FIELD::MDEntryPx));
             SBEUtils::setQty(m_mdUpdate.qty(), entry.getField(FIX::FIELD::MDEntrySize));
         }
@@ -204,7 +203,6 @@ void MessageProcessor::onMessage(const FIX44::MarketDataIncrementalRefresh& mess
             // Ask book update
             m_mdUpdate.updateType(com::liversedge::messages::MDUpdateType::BOOK_UPDATE);
             m_mdUpdate.side(com::liversedge::messages::MDSide::ASK);
-            m_mdUpdate.action(com::liversedge::messages::MDUpdateAction::CHANGE);
             SBEUtils::setPrice(m_mdUpdate.price(), entry.getField(FIX::FIELD::MDEntryPx));
             SBEUtils::setQty(m_mdUpdate.qty(), entry.getField(FIX::FIELD::MDEntrySize));
         }

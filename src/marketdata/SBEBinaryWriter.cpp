@@ -13,9 +13,9 @@ void SBEBinaryWriter::openNewFile(const std::string& filename) {
     filename_ = filename;
 
     // Create directories if they don't exist
-    std::filesystem::path filepath(filename);
+    boost::filesystem::path filepath(filename);
     if (filepath.has_parent_path()) {
-        std::filesystem::create_directories(filepath.parent_path());
+        boost::filesystem::create_directories(filepath.parent_path());
     }
 
     file_.open(filename, std::ios::binary | std::ios::trunc);

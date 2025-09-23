@@ -1,6 +1,5 @@
 #include "../../include/util/SimpleConfig.h"
 
-
 // Get string value
 std::string SimpleConfig::getString(const std::string& key) const {
     auto it = config_values_.find(key);
