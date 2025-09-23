@@ -1,5 +1,6 @@
 #pragma once
 
+#include <unordered_map>
 #include "quickfix/Application.h"
 #include "quickfix/MessageCracker.h"
 #include "quickfix/fix44/MarketDataRequest.h"
@@ -27,7 +28,7 @@ struct SecurityInfo
 };
 
 // Caps levels to 5000 to ensure they fit in 128kb buffer
-constexpr int MAX_LEVELS = 5000;
+constexpr int MAX_LEVELS = 50;
 
 class MessageProcessor : public FIX::MessageCracker
 {
@@ -47,6 +48,7 @@ private:
     SBEBinaryWriter& m_writer;
     std::int32_t securityIdCounter;
     std::vector<SecurityInfo> securitiesInfo;
+    std::unordered_map<std::string, int> m_symbolToSecurityId;
     com::liversedge::messages::ConnectionStatus m_connectionStatus;
     com::liversedge::messages::SecurityDefinition m_securityDefinition;
     com::liversedge::messages::SecurityStatus m_securityStatus;
@@ -57,4 +59,8 @@ private:
     bool UpdateSecurityStatus(int securityId, std::uint64_t timestamp, com::liversedge::messages::SecurityStatusEnum::Value newStatus);
     bool InvalidateState(std::uint64_t timestamp);
     static uint64_t GetSendingTime(FIX44::Message message);
+
+    // Shared helper for processing individual MD entries
+    template<typename T>
+    bool ProcessMDEntry(const T& entry, int securityId, uint64_t timestamp);
 };

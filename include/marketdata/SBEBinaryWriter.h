@@ -16,7 +16,7 @@ private:
     size_t messageCount_;
     std::vector<char> buffer_;
 
-    static constexpr size_t BUFFER_SIZE = 131072;
+    static constexpr size_t BUFFER_SIZE = 4092;
 
 public:
     SBEBinaryWriter();

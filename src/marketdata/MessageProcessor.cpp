@@ -11,21 +11,14 @@ void MessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& mes
 {
     const uint64_t timestamp = GetSendingTime(static_cast<FIX44::Message>(message));
 
-    int securityId = -1;
     const std::string& symbol = message.getField(FIX::FIELD::Symbol);
-    for (int i = 0; i < securityIdCounter; i++)
-    {
-        if (securitiesInfo[i].symbol == symbol)
-        {
-            securityId = i;
-            break;
-        }
-    }
-    if (securityId == -1)
+    auto it = m_symbolToSecurityId.find(symbol);
+    if (it == m_symbolToSecurityId.end())
     {
         std::cerr << "No matching security found for " << symbol << std::endl;
         return;
     }
+    int securityId = it->second;
 
     // Check if this is a trade snapshot by checking first entry (all entries are same type)
     FIX::NoMDEntries noMDEntriesField;
@@ -78,11 +71,13 @@ void MessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& mes
         mdEntryType.getValue() == FIX::MDEntryType_OFFER ? askCount++ : 0;
     }
 
-    // Process bid entries first
+    // Process bid entries first (up to MAX_LEVELS)
     auto nBidLevels = std::min(MAX_LEVELS, bidCount);
     auto bidLevels = m_mdFullBook.bidLevelsCount(nBidLevels);
     auto bidIdx = 0;
-    for (int i = 1; i <= noMDEntries && bidIdx < nBidLevels; i++)
+    auto processedBidIdx = 0;
+
+    for (int i = 1; i <= noMDEntries; i++)
     {
         FIX44::MarketDataSnapshotFullRefresh::NoMDEntries entry;
         message.getGroup(i, entry);
@@ -92,18 +87,25 @@ void MessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& mes
 
         if (mdEntryType == FIX::MDEntryType_BID)
         {
-            auto bidLevel = bidLevels.next();
-            SBEUtils::setPrice(bidLevel.price(), entry.getField(FIX::FIELD::MDEntryPx));
-            SBEUtils::setQty(bidLevel.qty(), entry.getField(FIX::FIELD::MDEntrySize));
-            bidIdx++;
+            if (bidIdx < nBidLevels)
+            {
+                // Include in full book (first MAX_LEVELS)
+                auto bidLevel = bidLevels.next();
+                SBEUtils::setPrice(bidLevel.price(), entry.getField(FIX::FIELD::MDEntryPx));
+                SBEUtils::setQty(bidLevel.qty(), entry.getField(FIX::FIELD::MDEntrySize));
+                bidIdx++;
+            }
+            processedBidIdx++;
         }
     }
 
-    // Process ask entries second
+    // Process ask entries second (up to MAX_LEVELS)
     auto nAskLevels = std::min(MAX_LEVELS, askCount);
     auto askLevels = m_mdFullBook.askLevelsCount(nAskLevels);
     auto askIdx = 0;
-    for (int i = 1; i <= noMDEntries && askIdx < nAskLevels; i++)
+    auto processedAskIdx = 0;
+
+    for (int i = 1; i <= noMDEntries; i++)
     {
         FIX44::MarketDataSnapshotFullRefresh::NoMDEntries entry;
         message.getGroup(i, entry);
@@ -113,10 +115,15 @@ void MessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& mes
 
         if (mdEntryType == FIX::MDEntryType_OFFER)
         {
-            auto askLevel = askLevels.next();
-            SBEUtils::setPrice(askLevel.price(), entry.getField(FIX::FIELD::MDEntryPx));
-            SBEUtils::setQty(askLevel.qty(), entry.getField(FIX::FIELD::MDEntrySize));
-            askIdx++;
+            if (askIdx < nAskLevels)
+            {
+                // Include in full book (first MAX_LEVELS)
+                auto askLevel = askLevels.next();
+                SBEUtils::setPrice(askLevel.price(), entry.getField(FIX::FIELD::MDEntryPx));
+                SBEUtils::setQty(askLevel.qty(), entry.getField(FIX::FIELD::MDEntrySize));
+                askIdx++;
+            }
+            processedAskIdx++;
         }
     }
 
@@ -127,6 +134,46 @@ void MessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& mes
         return;
     }
 
+    // Process overflow entries as incremental updates
+    if (bidCount > MAX_LEVELS || askCount > MAX_LEVELS)
+    {
+        auto overflowBidIdx = 0;
+        auto overflowAskIdx = 0;
+
+        for (int i = 1; i <= noMDEntries; i++)
+        {
+            FIX44::MarketDataSnapshotFullRefresh::NoMDEntries entry;
+            message.getGroup(i, entry);
+
+            FIX::MDEntryType mdEntryType;
+            entry.get(mdEntryType);
+
+            if (mdEntryType == FIX::MDEntryType_BID)
+            {
+                overflowBidIdx++;
+                if (overflowBidIdx > MAX_LEVELS)
+                {
+                    // Process overflow bid entry as incremental update
+                    ProcessMDEntry(entry, securityId, timestamp);
+                }
+            }
+            else if (mdEntryType == FIX::MDEntryType_OFFER)
+            {
+                overflowAskIdx++;
+                if (overflowAskIdx > MAX_LEVELS)
+                {
+                    // Process overflow ask entry as incremental update
+                    ProcessMDEntry(entry, securityId, timestamp);
+                }
+            }
+            else if (mdEntryType == FIX::MDEntryType_TRADE)
+            {
+                // Process trade entries as incremental updates
+                ProcessMDEntry(entry, securityId, timestamp);
+            }
+        }
+    }
+
     // Send out SecurityStatus - Online afterwards
     UpdateSecurityStatus(securityId, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::ONLINE);
 }
@@ -135,23 +182,15 @@ void MessageProcessor::onMessage(const FIX44::MarketDataIncrementalRefresh& mess
 {
     const uint64_t timestamp = GetSendingTime(static_cast<FIX44::Message>(message));
 
-    // Get symbol and find security ID
+    // Get symbol and find security ID using hash map lookup
     const std::string& symbol = message.getField(FIX::FIELD::Symbol);
-    int securityId = -1;
-    for (int i = 0; i < securityIdCounter; i++)
-    {
-        if (securitiesInfo[i].symbol == symbol)
-        {
-            securityId = i;
-            break;
-        }
-    }
-
-    if (securityId == -1)
+    const auto it = m_symbolToSecurityId.find(symbol);
+    if (it == m_symbolToSecurityId.end())
     {
         std::cerr << "No matching security found for incremental update: " << symbol << std::endl;
         return;
     }
+    const int securityId = it->second;
 
     // Check security status is ONLINE
     if (securitiesInfo[securityId].status != com::liversedge::messages::SecurityStatusEnum::Value::ONLINE)
@@ -163,78 +202,28 @@ void MessageProcessor::onMessage(const FIX44::MarketDataIncrementalRefresh& mess
     // Get number of MD entries
     FIX::NoMDEntries noMDEntriesField;
     message.get(noMDEntriesField);
-    int noMDEntries = noMDEntriesField.getValue();
+    const int noMDEntries = noMDEntriesField.getValue();
 
     if (noMDEntries == 0)
     {
         return;
     }
 
-    // Process each MD entry
+    // Fast path for single-entry messages (most common case)
+    if (noMDEntries == 1)
+    {
+        FIX44::MarketDataIncrementalRefresh::NoMDEntries entry;
+        message.getGroup(1, entry);
+        ProcessMDEntry(entry, securityId, timestamp);
+        return;
+    }
+
+    // Process each MD entry using shared logic
     for (int i = 1; i <= noMDEntries; i++)
     {
         FIX44::MarketDataIncrementalRefresh::NoMDEntries entry;
         message.getGroup(i, entry);
-
-        // Prepare MDUpdate message
-        if (!m_writer.prepareMessage(m_mdUpdate))
-        {
-            std::cerr << "Error preparing MDUpdate message" << std::endl;
-            continue;
-        }
-
-        m_mdUpdate.securityId(securityId);
-        m_mdUpdate.timestamp(timestamp);
-
-        // Get entry type and classify
-        FIX::MDEntryType mdEntryType;
-        entry.get(mdEntryType);
-
-        if (mdEntryType.getValue() == FIX::MDEntryType_BID)
-        {
-            // Bid book update
-            m_mdUpdate.updateType(com::liversedge::messages::MDUpdateType::BOOK_UPDATE);
-            m_mdUpdate.side(com::liversedge::messages::MDSide::BID);
-            SBEUtils::setPrice(m_mdUpdate.price(), entry.getField(FIX::FIELD::MDEntryPx));
-            SBEUtils::setQty(m_mdUpdate.qty(), entry.getField(FIX::FIELD::MDEntrySize));
-        }
-        else if (mdEntryType.getValue() == FIX::MDEntryType_OFFER)
-        {
-            // Ask book update
-            m_mdUpdate.updateType(com::liversedge::messages::MDUpdateType::BOOK_UPDATE);
-            m_mdUpdate.side(com::liversedge::messages::MDSide::ASK);
-            SBEUtils::setPrice(m_mdUpdate.price(), entry.getField(FIX::FIELD::MDEntryPx));
-            SBEUtils::setQty(m_mdUpdate.qty(), entry.getField(FIX::FIELD::MDEntrySize));
-        }
-        else if (mdEntryType.getValue() == FIX::MDEntryType_TRADE)
-        {
-            // Trade execution
-            m_mdUpdate.updateType(com::liversedge::messages::MDUpdateType::TRADE);
-            SBEUtils::setPrice(m_mdUpdate.price(), entry.getField(FIX::FIELD::MDEntryPx));
-            SBEUtils::setQty(m_mdUpdate.qty(), entry.getField(FIX::FIELD::MDEntrySize));
-
-            // Set trade side (what the taker was doing)
-            FIX::Side side;
-            entry.getField(side);
-            m_mdUpdate.side(side.getValue() == FIX::Side_BUY ? com::liversedge::messages::MDSide::ASK : com::liversedge::messages::MDSide::BID);
-
-            // Set trade ID if available (optional field)
-            if (entry.isSetField(FIX::FIELD::MDEntryID))
-            {
-                m_mdUpdate.tradeId(std::stoull(entry.getField(FIX::FIELD::MDEntryID)));
-            }
-        }
-        else
-        {
-            // Unknown entry type, skip
-            continue;
-        }
-
-        // Write the MDUpdate message
-        if (!m_writer.writeMessage(m_mdUpdate))
-        {
-            std::cerr << "Error writing MDUpdate message" << std::endl;
-        }
+        ProcessMDEntry(entry, securityId, timestamp);
     }
 }
 
@@ -260,10 +249,15 @@ void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::
         }
 
         // Give the security an internal identifier
-        securitiesInfo[securityIdCounter].symbol = security.getField(FIX::FIELD::Symbol);
+        const std::string& symbol = security.getField(FIX::FIELD::Symbol);
+        securitiesInfo[securityIdCounter].symbol = symbol;
         securitiesInfo[securityIdCounter].status = com::liversedge::messages::SecurityStatusEnum::Value::NULL_VALUE;
         uint32_t id = securityIdCounter;
         m_securityDefinition.id(securityIdCounter);
+
+        // Add to hash map for O(1) lookups
+        m_symbolToSecurityId[symbol] = securityIdCounter;
+
         securityIdCounter++;
 
         // Add all security information
@@ -343,6 +337,7 @@ bool MessageProcessor::InvalidateState(std::uint64_t timestamp)
 
     // Reset symbol state
     securityIdCounter = 0;
+    m_symbolToSecurityId.clear();
     return true;
 }
 
@@ -405,4 +400,91 @@ uint64_t MessageProcessor::GetSendingTime(FIX44::Message message)
     FIX::UtcTimeStamp sendingTime = sendingTimeField.getValue();
     return FixUtils::convertFIXTimeToNanos(sendingTime);
 }
+
+template<typename T>
+bool MessageProcessor::ProcessMDEntry(const T& entry, int securityId, uint64_t timestamp)
+{
+    // Prepare MDUpdate message
+    if (!m_writer.prepareMessage(m_mdUpdate))
+    {
+        std::cerr << "Error preparing MDUpdate message" << std::endl;
+        return false;
+    }
+
+    m_mdUpdate.securityId(securityId);
+    m_mdUpdate.timestamp(timestamp);
+
+    // Get entry type and classify
+    FIX::MDEntryType mdEntryType;
+    entry.get(mdEntryType);
+
+    // Extract MDUpdateAction for book updates
+    com::liversedge::messages::MDUpdateAction::Value updateAction = com::liversedge::messages::MDUpdateAction::Value::NULL_VALUE;
+    if (entry.isSetField(FIX::FIELD::MDUpdateAction))
+    {
+        const std::string& actionStr = entry.getField(FIX::FIELD::MDUpdateAction);
+        if (actionStr == "0") {
+            updateAction = com::liversedge::messages::MDUpdateAction::Value::NEW;
+        } else if (actionStr == "1") {
+            updateAction = com::liversedge::messages::MDUpdateAction::Value::CHANGE;
+        } else if (actionStr == "2") {
+            updateAction = com::liversedge::messages::MDUpdateAction::Value::DELETE;
+        }
+    }
+
+    if (mdEntryType.getValue() == FIX::MDEntryType_BID)
+    {
+        // Bid book update
+        m_mdUpdate.updateType(com::liversedge::messages::MDUpdateType::BOOK_UPDATE);
+        m_mdUpdate.side(com::liversedge::messages::MDSide::BID);
+        m_mdUpdate.action(updateAction);
+        SBEUtils::setPrice(m_mdUpdate.price(), entry.getField(FIX::FIELD::MDEntryPx));
+        SBEUtils::setQty(m_mdUpdate.qty(), entry.getField(FIX::FIELD::MDEntrySize));
+    }
+    else if (mdEntryType.getValue() == FIX::MDEntryType_OFFER)
+    {
+        // Ask book update
+        m_mdUpdate.updateType(com::liversedge::messages::MDUpdateType::BOOK_UPDATE);
+        m_mdUpdate.side(com::liversedge::messages::MDSide::ASK);
+        m_mdUpdate.action(updateAction);
+        SBEUtils::setPrice(m_mdUpdate.price(), entry.getField(FIX::FIELD::MDEntryPx));
+        SBEUtils::setQty(m_mdUpdate.qty(), entry.getField(FIX::FIELD::MDEntrySize));
+    }
+    else if (mdEntryType.getValue() == FIX::MDEntryType_TRADE)
+    {
+        // Trade execution
+        m_mdUpdate.updateType(com::liversedge::messages::MDUpdateType::TRADE);
+        SBEUtils::setPrice(m_mdUpdate.price(), entry.getField(FIX::FIELD::MDEntryPx));
+        SBEUtils::setQty(m_mdUpdate.qty(), entry.getField(FIX::FIELD::MDEntrySize));
+
+        // Set trade side (what the taker was doing)
+        FIX::Side side;
+        entry.getField(side);
+        m_mdUpdate.side(side.getValue() == FIX::Side_BUY ? com::liversedge::messages::MDSide::ASK : com::liversedge::messages::MDSide::BID);
+
+        // Set trade ID if available (optional field)
+        if (entry.isSetField(FIX::FIELD::MDEntryID))
+        {
+            m_mdUpdate.tradeId(std::stoull(entry.getField(FIX::FIELD::MDEntryID)));
+        }
+    }
+    else
+    {
+        // Unknown entry type, skip
+        return false;
+    }
+
+    // Write the MDUpdate message
+    if (!m_writer.writeMessage(m_mdUpdate))
+    {
+        std::cerr << "Error writing MDUpdate message" << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+// Explicit template instantiations
+template bool MessageProcessor::ProcessMDEntry<FIX44::MarketDataIncrementalRefresh::NoMDEntries>(const FIX44::MarketDataIncrementalRefresh::NoMDEntries& entry, int securityId, uint64_t timestamp);
+template bool MessageProcessor::ProcessMDEntry<FIX44::MarketDataSnapshotFullRefresh::NoMDEntries>(const FIX44::MarketDataSnapshotFullRefresh::NoMDEntries& entry, int securityId, uint64_t timestamp);
 
