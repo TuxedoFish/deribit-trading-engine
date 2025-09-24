@@ -274,7 +274,8 @@ void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::
         m_securityDefinition.timestamp(timestamp);
 
         // Variable length fields
-        SBEUtils::setVarString(m_securityDefinition.symbol(), security.getField(FIX::FIELD::Symbol));
+        m_securityDefinition.symbol().wrap()
+        SBEUtils::setVarString(m_securityDefinition, m_securityDefinition.symbol(), security.getField(FIX::FIELD::Symbol));
 
         // Write out security definition
         if (!m_writer.writeMessage(m_securityDefinition))

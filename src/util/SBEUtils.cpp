@@ -12,21 +12,7 @@ int64_t stringToMantissa(const std::string& str, int8_t exponent = -4)
     return static_cast<int64_t>(value * scale);
 }
 
-void SBEUtils::setVarString(VarStringEncoding& field, const std::string& value)
-{
-    if (value.length() > VarStringEncoding::lengthMaxValue())
-    {
-        throw std::runtime_error("String too long for VarStringEncoding: " +
-            std::to_string(value.length()) + " > " +
-            std::to_string(VarStringEncoding::lengthMaxValue()));
-    }
-
-    field.length(static_cast<std::uint32_t>(value.length()));
-    if (value.length() > 0)
-    {
-        std::memcpy(field.buffer() + field.offset() + 4, value.c_str(), value.length());
-    }
-}
+// setVarString is now a template in the header file
 
 void SBEUtils::setQty(Qty& field, const std::string& value)
 {

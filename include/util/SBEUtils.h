@@ -19,12 +19,31 @@ using Dec = boost::multiprecision::cpp_dec_float_50;
 class SBEUtils {
 public:
     /**
-     * Sets a VarStringEncoding field with bounds checking
+     * Sets a VarStringEncoding field with bounds checking and advances parent message position
+     * @param parentMessage The parent SBE message (to advance sbePosition)
      * @param field The VarStringEncoding field to set
      * @param value The string value to set
      * @throws std::runtime_error if string is too long
      */
-    static void setVarString(com::liversedge::messages::VarStringEncoding& field, const std::string& value);
+    template<typename T>
+    static void setVarString(T& parentMessage, com::liversedge::messages::VarStringEncoding& field, const std::string& value)
+    {
+        if (value.length() > com::liversedge::messages::VarStringEncoding::lengthMaxValue())
+        {
+            throw std::runtime_error("String too long for VarStringEncoding: " +
+                std::to_string(value.length()) + " > " +
+                std::to_string(com::liversedge::messages::VarStringEncoding::lengthMaxValue()));
+        }
+
+        field.length(static_cast<std::uint32_t>(value.length()));
+        if (value.length() > 0)
+        {
+            std::memcpy(field.buffer() + field.offset() + field.varDataEncodingOffset(), value.c_str(), value.length());
+        }
+
+        // Advance parent message position by the string length (length field is already included in encodedLength)
+        parentMessage.sbePosition(parentMessage.sbePosition() + value.length());
+    }
 
     /**
      * Sets a Qty field from a double value
