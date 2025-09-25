@@ -176,6 +176,8 @@ void MessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& mes
 
     // Send out SecurityStatus - Online afterwards
     UpdateSecurityStatus(securityId, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::ONLINE);
+
+    m_writer.flush();
 }
 
 void MessageProcessor::onMessage(const FIX44::MarketDataIncrementalRefresh& message, const FIX::SessionID& sessionID)
@@ -235,6 +237,7 @@ void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::
     FIX::NoRelatedSym noSecuritiesField;
     message.get(noSecuritiesField);
     int noSecurities = noSecuritiesField.getValue();
+    bool hasSpreads = false;
 
     // FIX repeating groups are 1-indexed
     for (int i = 1; i < noSecurities + 1; i++)
@@ -260,6 +263,12 @@ void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::
 
         securityIdCounter++;
 
+        auto securityType = SBEUtils::securityTypeFromString(security.getField(FIX::FIELD::SecurityType));
+        if (securityType == com::liversedge::messages::SecurityType::FUTCO)
+        {
+            hasSpreads = true;
+        }
+
         // Add all security information
         m_securityDefinition.currency(SBEUtils::currencyFromString(security.getField(FIX::FIELD::Currency)));
         m_securityDefinition.commCurrency(SBEUtils::currencyFromString(security.getField(FIX::FIELD::CommCurrency)));
@@ -268,13 +277,13 @@ void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::
         SBEUtils::setDate(m_securityDefinition.maturityDate(), security.getField(FIX::FIELD::MaturityDate));
         SBEUtils::setPrice(m_securityDefinition.minPriceIncrement(), security.getField(FIX::FIELD::MinPriceIncrement));
         m_securityDefinition.instrumentPricePrecision(std::stoi(security.getField(FIXCustomTags::InstrumentPricePrecision)));
-        SBEUtils::setQty(m_securityDefinition.minSizeIncrement(), security.getField(FIXCustomTags::MinSizeIncrement));
+        SBEUtils::setQty(m_securityDefinition.minSizeIncrement(), security.getField(FIX::FIELD::MinTradeVol));
         SBEUtils::setPrice(m_securityDefinition.contractMultiplier(), security.getField(FIX::FIELD::ContractMultiplier));
-        m_securityDefinition.securityType(SBEUtils::securityTypeFromString(security.getField(FIX::FIELD::SecurityType)));
+        m_securityDefinition.securityType(securityType);
         m_securityDefinition.timestamp(timestamp);
+        m_securityDefinition.action(com::liversedge::messages::ActionEnum::ADD);
 
         // Variable length fields
-        m_securityDefinition.symbol().wrap()
         SBEUtils::setVarString(m_securityDefinition, m_securityDefinition.symbol(), security.getField(FIX::FIELD::Symbol));
 
         // Write out security definition
@@ -291,6 +300,13 @@ void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::
             std::cerr << "Error updating security definition to PENDING_SNAPSHOT" << std::endl;
         }
     }
+
+    if (hasSpreads)
+    {
+        // Bit of a hack but once the spreads are all processed then we are online
+        UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::Value::ONLINE, timestamp);
+    }
+
     m_writer.flush();
 }
 
@@ -314,7 +330,7 @@ void MessageProcessor::onMessage(const FIX44::Logon& message, const FIX::Session
     }
 
     // Send out ConnectionStatus - Offline
-    UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::ONLINE, timestamp);
+    UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::STARTING, timestamp);
 }
 
 void MessageProcessor::onMessage(const FIX44::MarketDataRequest& message, const FIX::SessionID& sessionID)
@@ -331,10 +347,13 @@ bool MessageProcessor::InvalidateState(std::uint64_t timestamp)
     for (int i = 0; i < securityIdCounter; i++)
     {
         UpdateSecurityStatus(i, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::OFFLINE);
+        RemoveSecurity(i);
     }
 
     // Send out ConnectionStatus - Offline
     UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::OFFLINE, timestamp);
+
+    m_writer.flush();
 
     // Reset symbol state
     securityIdCounter = 0;
@@ -358,6 +377,30 @@ bool MessageProcessor::UpdateConnectionStatus(com::liversedge::messages::Connect
         std::cerr << "Error writing connection status update" << std::endl;
         return false;
     }
+
+    m_writer.flush();
+
+    return true;
+}
+
+bool MessageProcessor::RemoveSecurity(int securityId)
+{
+    if (!m_writer.prepareMessage(m_securityDefinition))
+    {
+        std::cerr << "Error preparing connection status update" << std::endl;
+        return false;
+    }
+
+    m_securityDefinition.id(securityId);
+    m_securityDefinition.action(com::liversedge::messages::ActionEnum::REMOVE);
+
+    if (!m_writer.writeMessage(m_securityDefinition))
+    {
+        std::cerr << "Error writing connection status update" << std::endl;
+        return false;
+    }
+
+    m_writer.flush();
 
     return true;
 }
@@ -481,6 +524,8 @@ bool MessageProcessor::ProcessMDEntry(const T& entry, int securityId, uint64_t t
         std::cerr << "Error writing MDUpdate message" << std::endl;
         return false;
     }
+
+    m_writer.flush();
 
     return true;
 }

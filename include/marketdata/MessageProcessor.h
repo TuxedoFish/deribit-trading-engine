@@ -58,9 +58,8 @@ private:
     bool UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::Value value, std::uint64_t timestamp);
     bool UpdateSecurityStatus(int securityId, std::uint64_t timestamp, com::liversedge::messages::SecurityStatusEnum::Value newStatus);
     bool InvalidateState(std::uint64_t timestamp);
+    bool RemoveSecurity(int securityId);
     static uint64_t GetSendingTime(FIX44::Message message);
-
-    // Shared helper for processing individual MD entries
     template<typename T>
     bool ProcessMDEntry(const T& entry, int securityId, uint64_t timestamp);
 };
