@@ -44,6 +44,8 @@ public:
     void onMessage(const FIX44::Logout&, const FIX::SessionID&) override;
     void onMessage(const FIX44::Logon&, const FIX::SessionID&) override;
 
+    void setShouldOutput(bool shouldOutput);
+
 private:
     SBEBinaryWriter& m_writer;
     std::int32_t securityIdCounter;
@@ -54,6 +56,7 @@ private:
     com::liversedge::messages::SecurityStatus m_securityStatus;
     com::liversedge::messages::MDFullBook m_mdFullBook;
     com::liversedge::messages::MDUpdate m_mdUpdate;
+    bool m_shouldOutput = true;
 
     bool UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::Value value, std::uint64_t timestamp);
     bool UpdateSecurityStatus(int securityId, std::uint64_t timestamp, com::liversedge::messages::SecurityStatusEnum::Value newStatus);

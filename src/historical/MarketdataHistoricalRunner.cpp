@@ -142,8 +142,70 @@ int MarketdataHistoricalRunner::run() {
     MessageProcessor processor{ writer };
     FileMessageProcessor historicalProcessor{ dataDictionaryLoc, processor, writer };
 
+    // Check for previous day file and prime state if needed
+    tm previousDate = startDate;
+    previousDate.tm_mday -= 1;
+
+    // TODO: Handle month/year rollover properly
+
+    std::string previousFilePath = findValidFilePath(rawFixCapturesLoc, previousDate);
+
+    if (!previousFilePath.empty() && boost::filesystem::exists(previousFilePath)) {
+        std::cout << "Found previous day file: " << previousFilePath << ", priming state..." << std::endl;
+
+        // Disable output while priming state
+        processor.setShouldOutput(false);
+
+        // Read file backwards to find last logon
+        boost::iostreams::mapped_file_source previousFile(previousFilePath);
+        const char* data = previousFile.data();
+        const char* end = data + previousFile.size();
+
+        // Find lines in reverse order
+        const char* lineEnd = end;
+        bool foundLogon = false;
+        size_t linesToReplay = 0;
+        const char* replayFrom;
+
+        // Go backwards through the file to collect all lines
+        for (const char* pos = end - 1; pos >= data; --pos) {
+            if (*pos == '\n' || pos == data) {
+                const char* lineStart = (pos == data) ? pos : pos + 1;
+                if (lineEnd > lineStart) {
+                    const char* pipePos = std::find(lineStart, lineEnd, '|');
+                    if (pipePos != lineEnd) {
+                        // Extract message part after pipe
+                        std::string msgStr = getStringSafe(pipePos + 1, lineEnd - pipePos - 1);
+                        linesToReplay++;
+                        if (!msgStr.empty() & FileMessageProcessor::isLogon(msgStr)) {
+                            replayFrom = lineStart;
+                            foundLogon = true;
+                            break;
+                        }
+                    }
+                }
+                lineEnd = pos;
+            }
+        }
+
+        if (foundLogon) {
+            readFrom(replayFrom, end, historicalProcessor, linesToReplay);
+        } else {
+            std::cerr << "No logon message found in previous day file" << std::endl;
+            return 0;
+        }
+
+        previousFile.close();
+    } else {
+        std::cerr << "No previous day file found (" << previousFilePath << "), exiting early" << std::endl;
+        return 0;
+    }
+
     // Main app loop
     while (true) {
+        // Re-enable output for normal processing
+        processor.setShouldOutput(true);
+
         std::string filePath = findValidFilePath(rawFixCapturesLoc, currentDate);
 
         if (filePath.empty() || !boost::filesystem::exists(filePath)) {
@@ -169,73 +231,19 @@ int MarketdataHistoricalRunner::run() {
         size_t totalLines = countTotalLines(data, end);
         std::cout << "Total lines to process: " << totalLines << std::endl;
 
-        // Progress tracking variables
-        auto startTime = std::chrono::steady_clock::now();
-        auto lastProgressTime = startTime;
-        size_t processedLines = 0;
-
         const char* lineStart = data;
 
-        while (lineStart < end) {
-            const char* lineEnd = std::find(lineStart, end, '\n');
-
-            if (lineEnd == lineStart) {
-                lineStart++;
-                continue;
-            }
-
-            processedLines++;
-
-            const char* pipePos = std::find(lineStart, lineEnd, '|');
-            if (pipePos != lineEnd) {
-                // Find the actual end of the message data (before \r\n)
-                const char* msgEnd = lineEnd;
-
-                // Back up past any \r characters (Windows)
-                while (msgEnd > pipePos + 1 && *(msgEnd - 1) == '\r') {
-                    msgEnd--;
-                }
-
-                // Create string_view that preserves binary data including SOH
-
-                // Convert to string while checking for null bytes and filtering them
-                std::string msgStr = getStringSafe(pipePos + 1, msgEnd - pipePos - 1);
-
-                // Skip processing if message was corrupted (contains null bytes)
-                if (msgStr.empty()) {
-                    lineStart = lineEnd + 1;
-                    continue;
-                }
-
-                try {
-                    historicalProcessor.process(msgStr);
-                }
-                catch (const std::exception& e) {
-                    std::cerr << "FIX parsing error: " << e.what() << std::endl;
-                    std::cerr << "Message was: ";
-                    for (char c : msgStr) {
-                        if (c == '\x01') std::cout << "[SOH]";
-                        else if (std::isprint(c)) std::cout << c;
-                        else std::cout << "[" << static_cast<int>(c) << "]";
-                    }
-                    std::cout << std::endl;
-                }
-            }
-
-            logProgress(processedLines, totalLines, startTime, lastProgressTime);
-
-            lineStart = lineEnd + 1;
-        }
+        auto startTime = std::chrono::steady_clock::now();
+        readFrom(lineStart, end, historicalProcessor, totalLines);
+        auto endTime = std::chrono::steady_clock::now();
 
         // Log completion for this file
-        auto endTime = std::chrono::steady_clock::now();
         auto totalTime = std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count();
         int hours = totalTime / 3600;
         int minutes = (totalTime % 3600) / 60;
         int seconds = totalTime % 60;
 
-        std::cout << "Completed processing " << filePath << " - "
-                  << processedLines << " lines in " << hours << "h "
+        std::cout << "Completed processing " << filePath << " in " << hours << "h "
                   << minutes << "m " << seconds << "s" << std::endl;
 
         currentDate.tm_mday += 1;
@@ -247,4 +255,63 @@ int MarketdataHistoricalRunner::run() {
 
     // Cleanup
     return 0;
+}
+
+void MarketdataHistoricalRunner::readFrom(const char* lineStart, const char* end, FileMessageProcessor& historicalProcessor, int totalLines)
+{
+    // Progress tracking variables
+    auto startTime = std::chrono::steady_clock::now();
+    auto lastProgressTime = startTime;
+    size_t processedLines = 0;
+
+    while (lineStart < end) {
+        const char* lineEnd = std::find(lineStart, end, '\n');
+
+        if (lineEnd == lineStart) {
+            lineStart++;
+            continue;
+        }
+
+        processedLines++;
+
+        const char* pipePos = std::find(lineStart, lineEnd, '|');
+        if (pipePos != lineEnd) {
+            // Find the actual end of the message data (before \r\n)
+            const char* msgEnd = lineEnd;
+
+            // Back up past any \r characters (Windows)
+            while (msgEnd > pipePos + 1 && *(msgEnd - 1) == '\r') {
+                msgEnd--;
+            }
+
+            // Create string_view that preserves binary data including SOH
+
+            // Convert to string while checking for null bytes and filtering them
+            std::string msgStr = getStringSafe(pipePos + 1, msgEnd - pipePos - 1);
+
+            // Skip processing if message was corrupted (contains null bytes)
+            if (msgStr.empty()) {
+                lineStart = lineEnd + 1;
+                continue;
+            }
+
+            try {
+                historicalProcessor.process(msgStr);
+            }
+            catch (const std::exception& e) {
+                std::cerr << "FIX parsing error: " << e.what() << std::endl;
+                std::cerr << "Message was: ";
+                for (char c : msgStr) {
+                    if (c == '\x01') std::cout << "[SOH]";
+                    else if (std::isprint(c)) std::cout << c;
+                    else std::cout << "[" << static_cast<int>(c) << "]";
+                }
+                std::cout << std::endl;
+            }
+        }
+
+        logProgress(processedLines, totalLines, startTime, lastProgressTime);
+
+        lineStart = lineEnd + 1;
+    }
 }

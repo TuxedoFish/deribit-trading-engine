@@ -14,6 +14,7 @@ public:
 
     void process(std::string);
     void nextFile(std::string);
+    static bool isLogon(const std::string& msgStr);
 
 private:
     FIX::SessionID m_sessionID;

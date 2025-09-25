@@ -20,6 +20,13 @@ void MessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& mes
     }
     int securityId = it->second;
 
+    if (!m_shouldOutput)
+    {
+        // Updates security status to be online
+        UpdateSecurityStatus(securityId, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::ONLINE);
+        return;
+    }
+
     // Check if this is a trade snapshot by checking first entry (all entries are same type)
     FIX::NoMDEntries noMDEntriesField;
     message.get(noMDEntriesField);
@@ -182,6 +189,11 @@ void MessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& mes
 
 void MessageProcessor::onMessage(const FIX44::MarketDataIncrementalRefresh& message, const FIX::SessionID& sessionID)
 {
+    if (!m_shouldOutput)
+    {
+        return;
+    }
+
     const uint64_t timestamp = GetSendingTime(static_cast<FIX44::Message>(message));
 
     // Get symbol and find security ID using hash map lookup
@@ -245,23 +257,14 @@ void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::
         FIX44::SecurityList::NoRelatedSym security;
         message.getGroup(i, security);
 
-        if (!m_writer.prepareMessage(m_securityDefinition))
-        {
-            std::cerr << "Error writing security definition" << std::endl;
-            continue;
-        }
-
         // Give the security an internal identifier
         const std::string& symbol = security.getField(FIX::FIELD::Symbol);
         securitiesInfo[securityIdCounter].symbol = symbol;
         securitiesInfo[securityIdCounter].status = com::liversedge::messages::SecurityStatusEnum::Value::NULL_VALUE;
         uint32_t id = securityIdCounter;
-        m_securityDefinition.id(securityIdCounter);
 
         // Add to hash map for O(1) lookups
         m_symbolToSecurityId[symbol] = securityIdCounter;
-
-        securityIdCounter++;
 
         auto securityType = SBEUtils::securityTypeFromString(security.getField(FIX::FIELD::SecurityType));
         if (securityType == com::liversedge::messages::SecurityType::FUTCO)
@@ -269,30 +272,42 @@ void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::
             hasSpreads = true;
         }
 
-        // Add all security information
-        m_securityDefinition.currency(SBEUtils::currencyFromString(security.getField(FIX::FIELD::Currency)));
-        m_securityDefinition.commCurrency(SBEUtils::currencyFromString(security.getField(FIX::FIELD::CommCurrency)));
-        m_securityDefinition.settlCurrency(SBEUtils::currencyFromString(security.getField(FIX::FIELD::SettlCurrency)));
-        m_securityDefinition.settlType(SBEUtils::settlTypeFromString(security.getField(FIX::FIELD::SettlType)));
-        SBEUtils::setDate(m_securityDefinition.maturityDate(), security.getField(FIX::FIELD::MaturityDate));
-        SBEUtils::setPrice(m_securityDefinition.minPriceIncrement(), security.getField(FIX::FIELD::MinPriceIncrement));
-        m_securityDefinition.instrumentPricePrecision(std::stoi(security.getField(FIXCustomTags::InstrumentPricePrecision)));
-        SBEUtils::setQty(m_securityDefinition.minSizeIncrement(), security.getField(FIX::FIELD::MinTradeVol));
-        SBEUtils::setPrice(m_securityDefinition.contractMultiplier(), security.getField(FIX::FIELD::ContractMultiplier));
-        m_securityDefinition.securityType(securityType);
-        m_securityDefinition.timestamp(timestamp);
-        m_securityDefinition.action(com::liversedge::messages::ActionEnum::ADD);
-
-        // Variable length fields
-        SBEUtils::setVarString(m_securityDefinition, m_securityDefinition.symbol(), security.getField(FIX::FIELD::Symbol));
-
-        // Write out security definition
-        if (!m_writer.writeMessage(m_securityDefinition))
+        if (m_shouldOutput)
         {
-            std::cerr << "Error writing security definition" << std::endl;
-            securityIdCounter--;
-            continue;
+            if (!m_writer.prepareMessage(m_securityDefinition))
+            {
+                std::cerr << "Error writing security definition" << std::endl;
+                continue;
+            }
+
+            // Add all security information
+            m_securityDefinition.id(securityIdCounter);
+            m_securityDefinition.currency(SBEUtils::currencyFromString(security.getField(FIX::FIELD::Currency)));
+            m_securityDefinition.commCurrency(SBEUtils::currencyFromString(security.getField(FIX::FIELD::CommCurrency)));
+            m_securityDefinition.settlCurrency(SBEUtils::currencyFromString(security.getField(FIX::FIELD::SettlCurrency)));
+            m_securityDefinition.settlType(SBEUtils::settlTypeFromString(security.getField(FIX::FIELD::SettlType)));
+            SBEUtils::setDate(m_securityDefinition.maturityDate(), security.getField(FIX::FIELD::MaturityDate));
+            SBEUtils::setPrice(m_securityDefinition.minPriceIncrement(), security.getField(FIX::FIELD::MinPriceIncrement));
+            m_securityDefinition.instrumentPricePrecision(std::stoi(security.getField(FIXCustomTags::InstrumentPricePrecision)));
+            SBEUtils::setQty(m_securityDefinition.minSizeIncrement(), security.getField(FIX::FIELD::MinTradeVol));
+            SBEUtils::setPrice(m_securityDefinition.contractMultiplier(), security.getField(FIX::FIELD::ContractMultiplier));
+            m_securityDefinition.securityType(securityType);
+            m_securityDefinition.timestamp(timestamp);
+            m_securityDefinition.action(com::liversedge::messages::ActionEnum::ADD);
+
+            // Variable length fields
+            SBEUtils::setVarString(m_securityDefinition, m_securityDefinition.symbol(), security.getField(FIX::FIELD::Symbol));
+
+            // Write out security definition
+            if (!m_writer.writeMessage(m_securityDefinition))
+            {
+                std::cerr << "Error writing security definition" << std::endl;
+                securityIdCounter--;
+                continue;
+            }
         }
+
+        securityIdCounter++;
 
         // Send the security status update
         if (!UpdateSecurityStatus(id, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::PENDING_SNAPSHOT))
@@ -307,7 +322,10 @@ void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::
         UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::Value::ONLINE, timestamp);
     }
 
-    m_writer.flush();
+    if (m_shouldOutput)
+    {
+        m_writer.flush();
+    }
 }
 
 void MessageProcessor::onMessage(const FIX44::Logout& message, const FIX::SessionID& sessionID)
@@ -353,8 +371,6 @@ bool MessageProcessor::InvalidateState(std::uint64_t timestamp)
     // Send out ConnectionStatus - Offline
     UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::OFFLINE, timestamp);
 
-    m_writer.flush();
-
     // Reset symbol state
     securityIdCounter = 0;
     m_symbolToSecurityId.clear();
@@ -363,6 +379,10 @@ bool MessageProcessor::InvalidateState(std::uint64_t timestamp)
 
 bool MessageProcessor::UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::Value value, const std::uint64_t timestamp)
 {
+    if (!m_shouldOutput)
+    {
+        return true;
+    }
     if (!m_writer.prepareMessage(m_connectionStatus))
     {
         std::cerr << "Error preparing connection status update" << std::endl;
@@ -385,6 +405,10 @@ bool MessageProcessor::UpdateConnectionStatus(com::liversedge::messages::Connect
 
 bool MessageProcessor::RemoveSecurity(int securityId)
 {
+    if (!m_shouldOutput)
+    {
+        return true;
+    }
     if (!m_writer.prepareMessage(m_securityDefinition))
     {
         std::cerr << "Error preparing connection status update" << std::endl;
@@ -417,6 +441,12 @@ bool MessageProcessor::UpdateSecurityStatus(int securityId, const std::uint64_t 
         // No change don't send
         return false;
     }
+    securitiesInfo[securityId].status = newStatus;
+
+    if (!m_shouldOutput)
+    {
+        return true;
+    }
     if (!m_writer.prepareMessage(m_securityStatus))
     {
         std::cerr << "Error preparing security status update" << std::endl;
@@ -426,7 +456,6 @@ bool MessageProcessor::UpdateSecurityStatus(int securityId, const std::uint64_t 
     m_securityStatus.securityId(securityId);
     m_securityStatus.timestamp(timestamp);
     m_securityStatus.status(newStatus);
-    securitiesInfo[securityId].status = newStatus;
 
     if (!m_writer.writeMessage(m_securityStatus))
     {
@@ -435,6 +464,12 @@ bool MessageProcessor::UpdateSecurityStatus(int securityId, const std::uint64_t 
     }
 
     return true;
+}
+
+void MessageProcessor::setShouldOutput(bool shouldOutput)
+{
+    std::cout << "MessageProcessor: Setting shouldOutput to " << shouldOutput << std::endl;
+    m_shouldOutput = shouldOutput;
 }
 
 uint64_t MessageProcessor::GetSendingTime(FIX44::Message message)
@@ -448,6 +483,11 @@ uint64_t MessageProcessor::GetSendingTime(FIX44::Message message)
 template<typename T>
 bool MessageProcessor::ProcessMDEntry(const T& entry, int securityId, uint64_t timestamp)
 {
+    if (!m_shouldOutput)
+    {
+        return true;
+    }
+
     // Prepare MDUpdate message
     if (!m_writer.prepareMessage(m_mdUpdate))
     {

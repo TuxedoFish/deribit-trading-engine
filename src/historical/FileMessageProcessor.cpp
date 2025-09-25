@@ -56,3 +56,19 @@ void FileMessageProcessor::process(std::string msgStr) {
 void FileMessageProcessor::nextFile(std::string filePath) {
     m_writer.openNewFile(filePath);
 }
+
+bool FileMessageProcessor::isLogon(const std::string& msgStr) {
+    // Quick check for logon message (MsgType=A) without full parsing
+    // Look for the pattern "35=A" in the FIX message
+    size_t pos = msgStr.find("35=A");
+    if (pos == std::string::npos) {
+        return false;
+    }
+
+    // Ensure it's followed by SOH (field separator) or end of string
+    if (pos + 4 < msgStr.length()) {
+        return msgStr[pos + 4] == '\x01'; // SOH character
+    }
+
+    return pos + 4 == msgStr.length(); // End of string
+}
