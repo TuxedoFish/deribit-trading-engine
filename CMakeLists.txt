@@ -36,15 +36,61 @@ add_custom_command(
 )
 add_custom_target(generate_sbe_code DEPENDS ${SBE_STAMP})
 
-# Add source to this project's executable.
-add_executable(deribit-trading-engine "src/main.cpp" "include/AppRunner.h" "include/fix/Application.h" "src/fix/Application.cpp" "include/util/AuthHandler.h" "src/util/AuthHandler.cpp" "src/marketdata/MarketDataLogger.cpp" "include/marketdata/MarketDataLogger.h" "include/historical/ApplicationPersister.h" "src/historical/ApplicationPersister.cpp" "include/util/CmdLineOptions.h" "src/AppRunner.cpp" "include/main.h" "include/util/SimpleConfig.h" "src/util/SimpleConfig.cpp" "include/marketdata/MessageProcessor.h" "src/marketdata/MessageProcessor.cpp" "src/historical/FileMessageProcessor.cpp" "include/historical/FileMessageProcessor.h" "src/historical/MarketdataHistoricalRunner.cpp" "include/marketdata/SBEBinaryWriter.h" "src/marketdata/SBEBinaryWriter.cpp"
-        src/util/SBEUtils.cpp
-        include/util/SBEUtils.h
-        include/marketdata/FixCustomTags.h
-        src/marketdata/FixUtils.cpp
-        include/marketdata/FixUtils.h
-        src/fix/ApplicationWrapper.cpp
+# Source file groups
+set(MAIN_SOURCES
+        src/main.cpp
+        include/main.h
+        include/AppRunner.h
+        src/AppRunner.cpp
+)
+
+set(FIX_SOURCES
+        include/fix/Application.h
+        src/fix/Application.cpp
         include/fix/ApplicationWrapper.h
+        src/fix/ApplicationWrapper.cpp
+        include/fix/FIXRunner.h
+        src/fix/FIXRunner.cpp
+)
+
+set(UTIL_SOURCES
+        include/util/AuthHandler.h
+        src/util/AuthHandler.cpp
+        include/util/CmdLineOptions.h
+        include/util/SimpleConfig.h
+        src/util/SimpleConfig.cpp
+        include/util/SBEUtils.h
+        src/util/SBEUtils.cpp
+)
+
+set(MARKETDATA_SOURCES
+        include/marketdata/MarketDataLogger.h
+        src/marketdata/MarketDataLogger.cpp
+        include/marketdata/MessageProcessor.h
+        src/marketdata/MessageProcessor.cpp
+        include/marketdata/SBEBinaryWriter.h
+        src/marketdata/SBEBinaryWriter.cpp
+        include/marketdata/FixCustomTags.h
+        include/marketdata/FixUtils.h
+        src/marketdata/FixUtils.cpp
+)
+
+set(HISTORICAL_SOURCES
+        include/historical/ApplicationPersister.h
+        src/historical/ApplicationPersister.cpp
+        include/historical/FileMessageProcessor.h
+        src/historical/FileMessageProcessor.cpp
+        include/historical/MarketdataHistoricalRunner.h
+        src/historical/MarketdataHistoricalRunner.cpp
+)
+
+# Add source to this project's executable.
+add_executable(deribit-trading-engine
+        ${MAIN_SOURCES}
+        ${FIX_SOURCES}
+        ${UTIL_SOURCES}
+        ${MARKETDATA_SOURCES}
+        ${HISTORICAL_SOURCES}
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)

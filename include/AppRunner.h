@@ -25,6 +25,7 @@
 #include "quickfix/ThreadedSSLSocketInitiator.h"
 #include "historical/FileMessageProcessor.h"
 #include "historical/MarketdataHistoricalRunner.h"
+#include "fix/FIXRunner.h"
 
 class AppRunner
 {

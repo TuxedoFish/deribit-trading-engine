@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
         AppRunner app(config);
         return app.runProcessRawMarketdata();
     }
-    if (applicationName.rfind("md-live_prod", 0) == 0) {
+    if (applicationName.rfind("md-prod", 0) == 0) {
         std::cout << "Running as: " << applicationName << std::endl;
         SimpleConfig config("config/settings.md-prod.txt");
         AppRunner app(config);
