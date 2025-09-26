@@ -27,6 +27,12 @@ int main(int argc, char* argv[])
         AppRunner app(config);
         return app.runMarketdata();
     }
+    if (applicationName.rfind("md-testnet", 0) == 0) {
+        std::cout << "Running as: " << applicationName << std::endl;
+        SimpleConfig config("config/settings.md-testnet.txt");
+        AppRunner app(config);
+        return app.runMarketdata();
+    }
     std::cout << "Unknown application: " << applicationName << std::endl;
     return 0;
 }
