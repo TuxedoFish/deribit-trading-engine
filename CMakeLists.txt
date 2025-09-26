@@ -1,15 +1,15 @@
 ﻿# CMakeList.txt : Top-level CMake project file, do global configuration
 # and include sub-projects here.
 #
-cmake_minimum_required (VERSION 3.10)
+cmake_minimum_required(VERSION 3.10)
 
 # Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
-  cmake_policy(SET CMP0141 NEW)
-  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
-endif()
+    cmake_policy(SET CMP0141 NEW)
+    set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
+endif ()
 
-project ("deribit-trading-engine")
+project("deribit-trading-engine")
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -24,12 +24,12 @@ add_custom_command(
         OUTPUT ${SBE_STAMP}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${GENERATED_DIR}
         COMMAND java -Dsbe.target.language=CPP
-          -Dsbe.output.dir=${GENERATED_DIR}
-          -Dsbe.validation.warnings.fatal=true
-          -Dsbe.validation.stop.on.error=true
-          -Dsbe.xinclude.aware=true
-          -jar ${SBE_JAR}
-          ${SBE_SCHEMA}
+        -Dsbe.output.dir=${GENERATED_DIR}
+        -Dsbe.validation.warnings.fatal=true
+        -Dsbe.validation.stop.on.error=true
+        -Dsbe.xinclude.aware=true
+        -jar ${SBE_JAR}
+        ${SBE_SCHEMA}
         COMMAND ${CMAKE_COMMAND} -E touch ${SBE_STAMP}
         DEPENDS ${SBE_SCHEMA} ${SBE_JAR}
         COMMENT "Generating SBE C++ code from schema"
@@ -37,32 +37,34 @@ add_custom_command(
 add_custom_target(generate_sbe_code DEPENDS ${SBE_STAMP})
 
 # Add source to this project's executable.
-add_executable (deribit-trading-engine "src/main.cpp" "include/AppRunner.h" "include/Application.h" "src/Application.cpp" "include/util/AuthHandler.h" "src/util/AuthHandler.cpp" "src/marketdata/MarketDataLogger.cpp" "include/marketdata/MarketDataLogger.h" "include/historical/ApplicationPersister.h" "src/historical/ApplicationPersister.cpp"   "include/util/CmdLineOptions.h" "src/AppRunner.cpp" "include/main.h" "include/util/SimpleConfig.h" "src/util/SimpleConfig.cpp" "include/marketdata/MessageProcessor.h" "src/marketdata/MessageProcessor.cpp" "src/historical/FileMessageProcessor.cpp" "include/historical/FileMessageProcessor.h" "src/historical/MarketdataHistoricalRunner.cpp" "include/marketdata/SBEBinaryWriter.h" "src/marketdata/SBEBinaryWriter.cpp"
+add_executable(deribit-trading-engine "src/main.cpp" "include/AppRunner.h" "include/fix/Application.h" "src/fix/Application.cpp" "include/util/AuthHandler.h" "src/util/AuthHandler.cpp" "src/marketdata/MarketDataLogger.cpp" "include/marketdata/MarketDataLogger.h" "include/historical/ApplicationPersister.h" "src/historical/ApplicationPersister.cpp" "include/util/CmdLineOptions.h" "src/AppRunner.cpp" "include/main.h" "include/util/SimpleConfig.h" "src/util/SimpleConfig.cpp" "include/marketdata/MessageProcessor.h" "src/marketdata/MessageProcessor.cpp" "src/historical/FileMessageProcessor.cpp" "include/historical/FileMessageProcessor.h" "src/historical/MarketdataHistoricalRunner.cpp" "include/marketdata/SBEBinaryWriter.h" "src/marketdata/SBEBinaryWriter.cpp"
         src/util/SBEUtils.cpp
         include/util/SBEUtils.h
         include/marketdata/FixCustomTags.h
         src/marketdata/FixUtils.cpp
         include/marketdata/FixUtils.h
+        src/fix/ApplicationWrapper.cpp
+        include/fix/ApplicationWrapper.h
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET deribit-trading-engine PROPERTY CXX_STANDARD 14)
-endif()
+    set_property(TARGET deribit-trading-engine PROPERTY CXX_STANDARD 14)
+endif ()
 
 # Dependencies
 find_package(OpenSSL REQUIRED)
 find_package(quickfix CONFIG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS iostreams filesystem system)
 
-if(WIN32)
-  target_link_libraries(deribit-trading-engine
-          ws2_32 wsock32 winmm crypt32 secur32
-  )
-elseif(UNIX)
-  target_link_libraries(deribit-trading-engine
-          pthread dl
-  )
-endif()
+if (WIN32)
+    target_link_libraries(deribit-trading-engine
+            ws2_32 wsock32 winmm crypt32 secur32
+    )
+elseif (UNIX)
+    target_link_libraries(deribit-trading-engine
+            pthread dl
+    )
+endif ()
 
 target_link_libraries(deribit-trading-engine
         ${OPENSSL_LIBRARIES} quickfix

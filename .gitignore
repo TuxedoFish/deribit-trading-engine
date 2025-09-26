@@ -15,5 +15,5 @@ log/
 store/
 
 # Settings
-config/settings.md-hist.txt
-config/settings.md-process.txt
+config/settings.*
+!config/settings.example.txt

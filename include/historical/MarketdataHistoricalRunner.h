@@ -13,13 +13,6 @@
 #include "../marketdata/SBEBinaryWriter.h"
 #include "../marketdata/MessageProcessor.h"
 
-const std::string kPathSeparator =
-#ifdef _WIN32
-"\\";
-#else
-"/";
-#endif
-
 class MarketdataHistoricalRunner
 {
 public:

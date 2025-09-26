@@ -9,6 +9,13 @@
 #include <sstream>
 #include <stdexcept>
 
+const std::string kPathSeparator =
+#ifdef _WIN32
+"\\";
+#else
+    "/";
+#endif
+
 class SimpleConfig {
 private:
     std::unordered_map<std::string, std::string> config_values_;

@@ -1,4 +1,4 @@
-#include "../include/Application.h"
+#include "../../include/fix/Application.h"
 
 void Application::onCreate(const FIX::SessionID& sessionID)
 {
@@ -27,8 +27,8 @@ void Application::toAdmin(FIX::Message& message, const FIX::SessionID& sessionID
 
     if (msgType.getValue() == FIX::MsgType_Logon)
     {
-        std::string user = config_.getString("deribit_client_id");
-        std::string secret = config_.getString("deribit_client_secret");
+        std::string user = m_config.getString("deribit_client_id");
+        std::string secret = m_config.getString("deribit_client_secret");
 
         // Creates the raw data
         std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());

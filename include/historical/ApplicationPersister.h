@@ -1,7 +1,7 @@
 // ApplicationPersister.h - Logging extension
 #pragma once
 
-#include "../Application.h"
+#include "../fix/Application.h"
 #include "../marketdata/MarketDataLogger.h"
 #include "../util/SimpleConfig.h"
 #include <memory>

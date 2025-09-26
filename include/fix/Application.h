@@ -16,16 +16,16 @@
 #include <openssl/sha.h>
 #include <algorithm> 
 #include <vector>
-#include "util/AuthHandler.h"
-#include "marketdata/MarketDataLogger.h"
-#include "util/SimpleConfig.h"
+#include "../util/AuthHandler.h"
+#include "../marketdata/MarketDataLogger.h"
+#include "../util/SimpleConfig.h"
 
 using encoding_t = unsigned char const*;
 
 class Application : public FIX::Application, public FIX::MessageCracker
 {
 public:
-    Application(SimpleConfig& config) : config_{ config } {}
+    Application(SimpleConfig& config) : m_config{ config } {}
 
     // Application interface
     void onCreate(const FIX::SessionID&) override;
@@ -46,7 +46,7 @@ public:
 private:
     FIX::SessionID m_sessionID;
     bool m_loggedOn = false;
-    SimpleConfig config_;
+    SimpleConfig m_config;
 
     // Overloaded onMessage
     void onMessage(const FIX44::MarketDataRequest&, const FIX::SessionID&);
