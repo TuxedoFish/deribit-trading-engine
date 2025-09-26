@@ -17,9 +17,11 @@ public:
     void run();
 
 private:
-    const SimpleConfig& config_;
+    const SimpleConfig& m_config;
     std::unique_ptr<RefDataHolder> m_refDataHolder;
     std::unique_ptr<SBEQueuePoller> m_mdPoller;
+    std::unique_ptr<SBEQueuePoller> m_gwInPoller;
 
     void setupPollers();
+    std::unique_ptr<SBEQueuePoller> createPoller(std::string directory, SBEMessageListener& listener);
 };
