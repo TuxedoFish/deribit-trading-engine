@@ -1,4 +1,4 @@
-#include "../include/util/SBEUtils.h"
+#include "../../include/sbe/SBEUtils.h"
 
 #include <stdexcept>
 #include <cstring>
@@ -81,4 +81,38 @@ SecurityType::Value SBEUtils::securityTypeFromString(const std::string& security
         return SecurityType::FUTCO;
     }
     return SecurityType::NULL_VALUE;
+}
+
+Dec SBEUtils::convertPrice(const Price& price)
+{
+    int64_t mantissa = price.mantissa();
+    int8_t exponent = price.exponent();
+
+    Dec value(mantissa);
+    Dec scale = pow(Dec(10), exponent);
+    return value * scale;
+}
+
+Dec SBEUtils::convertQty(const Qty& qty)
+{
+    int64_t mantissa = qty.mantissa();
+    int8_t exponent = qty.exponent();
+
+    Dec value(mantissa);
+    Dec scale = pow(Dec(10), exponent);
+    return value * scale;
+}
+
+std::string SBEUtils::extractVarString(const VarStringEncoding& varString)
+{
+    // VarStringEncoding has the length stored first, then the actual string data
+    std::uint32_t stringLength = varString.length();
+
+    if (stringLength > 0) {
+        // The string data starts after the length field (4 bytes)
+        const char* stringStart = varString.buffer() + varString.offset() + varString.varDataEncodingOffset();
+        return std::string(stringStart, stringLength);
+    } else {
+        return "";
+    }
 }

@@ -1,4 +1,4 @@
-#include "../../include/marketdata/SBEBinaryWriter.h"
+#include "../../include/sbe/SBEBinaryWriter.h"
 
 SBEBinaryWriter::SBEBinaryWriter()
     : messageCount_(0), buffer_(BUFFER_SIZE) {

@@ -3,7 +3,7 @@
 #include <string>
 #include <exception>
 #include "quickfix/Application.h"
-#include "../marketdata/SBEBinaryWriter.h"
+#include "../sbe/SBEBinaryWriter.h"
 #include "../marketdata/MessageProcessor.h"
 
 class FileMessageProcessor

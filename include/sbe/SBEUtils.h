@@ -5,13 +5,10 @@
 #include "../../generated/com_liversedge_messages/Currency.h"
 #include "../../generated/com_liversedge_messages/SecurityType.h"
 #include "../../generated/com_liversedge_messages/SettlType.h"
-// #include "../../generated/com_liversedge_messages/Qty.h"
+#include "../../generated/com_liversedge_messages/Qty.h"
 #include "../../generated/com_liversedge_messages/Price.h"
 #include "../../generated/com_liversedge_messages/Date.h"
-#include <boost/multiprecision/cpp_dec_float.hpp>
-
-
-using Dec = boost::multiprecision::cpp_dec_float_50;
+#include "../util/DecimalTypes.h"
 
 /**
 * Utility class for working with SBE (Simple Binary Encoding) generated types
@@ -83,6 +80,24 @@ public:
      * @param securityType The SecurityType in string form
      */
     static com::liversedge::messages::SecurityType::Value securityTypeFromString(const std::string& securityType);
+
+    /**
+     * Convert Price field to decimal
+     * @param price The Price field to convert
+     */
+    static Dec convertPrice(const com::liversedge::messages::Price& price);
+
+    /**
+     * Convert Qty field to decimal
+     * @param qty The Qty field to convert
+     */
+    static Dec convertQty(const com::liversedge::messages::Qty& qty);
+
+    /**
+     * Extract string from VarStringEncoding field
+     * @param varString The VarStringEncoding field to extract from
+     */
+    static std::string extractVarString(const com::liversedge::messages::VarStringEncoding& varString);
 
 private:
     // Private constructor - this is a utility class with only static methods

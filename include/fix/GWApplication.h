@@ -18,7 +18,7 @@
 #include "../util/AuthHandler.h"
 #include "../marketdata/MarketDataLogger.h"
 #include "../util/SimpleConfig.h"
-#include "../marketdata/FixUtils.h"
+#include "FixUtils.h"
 
 using encoding_t = unsigned char const*;
 

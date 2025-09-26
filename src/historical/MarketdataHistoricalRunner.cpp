@@ -12,20 +12,6 @@ std::string MarketdataHistoricalRunner::getMonthDayString(int dayOrMonth) {
     }
 }
 
-tm MarketdataHistoricalRunner::getDateFromString(std::string dateString) {
-    tm tm = {};
-    std::istringstream ss(dateString);
-
-    // Parse the date string using std::get_time
-    ss >> std::get_time(&tm, "%Y%m%d");
-
-    if (ss.fail()) {
-        std::cout << "Date parsing failed!" << std::endl;
-        return tm;
-    }
-    return tm;
-}
-
 std::string MarketdataHistoricalRunner::findValidFilePath(const std::string& rawFixCapturesLoc, tm& currentDate) {
     std::string datePath = std::to_string(1900 + currentDate.tm_year)
         + kPathSeparator + getMonthDayString(currentDate.tm_mon + 1)
@@ -135,8 +121,8 @@ int MarketdataHistoricalRunner::run() {
     }
 
     std::cout << "Processing from " << startDateStr << " until " << endDateStr << std::endl;
-    tm startDate = getDateFromString(startDateStr);
-    tm endDate = getDateFromString(endDateStr);
+    tm startDate = DateUtils::getDateFromString(startDateStr);
+    tm endDate = DateUtils::getDateFromString(endDateStr);
     tm currentDate = startDate;
     SBEBinaryWriter writer{};
     MessageProcessor processor{ writer };

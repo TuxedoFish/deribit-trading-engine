@@ -10,8 +10,9 @@
 #include <boost/iostreams/device/mapped_file.hpp>
 #include "../util/SimpleConfig.h"
 #include "FileMessageProcessor.h"
-#include "../marketdata/SBEBinaryWriter.h"
+#include "../sbe/SBEBinaryWriter.h"
 #include "../marketdata/MessageProcessor.h"
+#include "../util/DateUtils.h"
 
 class MarketdataHistoricalRunner
 {
@@ -23,7 +24,6 @@ private:
     SimpleConfig config_;
 
     std::string getMonthDayString(int dayOrMonth);
-    tm getDateFromString(std::string dateString);
     std::string findValidFilePath(const std::string& rawFixCapturesLoc, tm& currentDate);
     size_t countTotalLines(const char* data, const char* end);
     std::string getStringSafe(const char* data, size_t size);

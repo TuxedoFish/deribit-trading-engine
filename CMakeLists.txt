@@ -63,8 +63,11 @@ set(UTIL_SOURCES
         include/util/CmdLineOptions.h
         include/util/SimpleConfig.h
         src/util/SimpleConfig.cpp
-        include/util/SBEUtils.h
-        src/util/SBEUtils.cpp
+        include/util/DateUtils.h
+        src/util/DateUtils.cpp
+        include/util/DecimalTypes.h
+        include/sbe/SBEUtils.h
+        src/sbe/SBEUtils.cpp
 )
 
 set(MARKETDATA_SOURCES
@@ -72,11 +75,18 @@ set(MARKETDATA_SOURCES
         src/marketdata/MarketDataLogger.cpp
         include/marketdata/MessageProcessor.h
         src/marketdata/MessageProcessor.cpp
-        include/marketdata/SBEBinaryWriter.h
-        src/marketdata/SBEBinaryWriter.cpp
-        include/marketdata/FixCustomTags.h
-        include/marketdata/FixUtils.h
-        src/marketdata/FixUtils.cpp
+        include/sbe/SBEBinaryWriter.h
+        src/sbe/SBEBinaryWriter.cpp
+        include/sbe/SBEMessageListener.h
+        include/sbe/SBEQueuePoller.h
+        src/sbe/SBEQueuePoller.cpp
+        include/sbe/SecurityInfo.h
+        src/sbe/SecurityInfo.cpp
+        include/sbe/RefDataHolder.h
+        src/sbe/RefDataHolder.cpp
+        include/fix/FixCustomTags.h
+        include/fix/FixUtils.h
+        src/fix/FixUtils.cpp
 )
 
 set(HISTORICAL_SOURCES

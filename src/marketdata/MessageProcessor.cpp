@@ -4,7 +4,7 @@ MessageProcessor::MessageProcessor(SBEBinaryWriter& writer)
     : m_writer(writer), securityIdCounter(0)
 {
     // Initialize state
-    securitiesInfo.assign(100, SecurityInfo{});
+    securitiesInfo.assign(100, ProcessorSecurityInfo{});
 }
 
 void MessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& message, const FIX::SessionID& sessionID)

@@ -10,10 +10,10 @@
 #include "quickfix/fix44/SecurityList.h"
 #include "quickfix/fix44/Logon.h"
 #include "quickfix/fix44/Logout.h"
-#include "SBEBinaryWriter.h"
-#include "FixCustomTags.h"
-#include "../util/SBEUtils.h"
-#include "FixUtils.h"
+#include "../sbe/SBEBinaryWriter.h"
+#include "../fix/FixCustomTags.h"
+#include "../sbe/SBEUtils.h"
+#include "../fix/FixUtils.h"
 #include "../../generated/com_liversedge_messages/SecurityDefinition.h"
 #include "../../generated/com_liversedge_messages/SecurityStatus.h"
 #include "../../generated/com_liversedge_messages/SecurityType.h"
@@ -21,7 +21,7 @@
 #include "../../generated/com_liversedge_messages/MDFullBook.h"
 #include "../../generated/com_liversedge_messages/MDUpdate.h"
 
-struct SecurityInfo
+struct ProcessorSecurityInfo
 {
     std::string symbol;
     com::liversedge::messages::SecurityStatusEnum::Value status;
@@ -49,7 +49,7 @@ public:
 private:
     SBEBinaryWriter& m_writer;
     std::int32_t securityIdCounter;
-    std::vector<SecurityInfo> securitiesInfo;
+    std::vector<ProcessorSecurityInfo> securitiesInfo;
     std::unordered_map<std::string, int> m_symbolToSecurityId;
     com::liversedge::messages::ConnectionStatus m_connectionStatus;
     com::liversedge::messages::SecurityDefinition m_securityDefinition;
