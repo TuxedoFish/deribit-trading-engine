@@ -4,6 +4,10 @@ FIXRunner::FIXRunner(const SimpleConfig& config) : config_(config) {
 }
 
 int FIXRunner::run(FIX::Application& application, const std::string& startupMessage) {
+    return run(application, startupMessage, waitForUserInput);
+}
+
+int FIXRunner::run(FIX::Application& application, const std::string& startupMessage, std::function<void()> mainLoop) {
     try {
         // Load configuration
         FIX::SessionSettings settings(config_.getString("fix_settings_file_path"));
@@ -21,8 +25,8 @@ int FIXRunner::run(FIX::Application& application, const std::string& startupMess
         initiator.start();
         std::cout << "FIX client started. Type q to quit..." << std::endl;
 
-        // Wait for user input
-        waitForUserInput();
+        // Run the main loop
+        mainLoop();
 
         // Stop the connection
         initiator.stop();

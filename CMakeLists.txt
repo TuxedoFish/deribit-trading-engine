@@ -45,12 +45,16 @@ set(MAIN_SOURCES
 )
 
 set(FIX_SOURCES
-        include/fix/Application.h
-        src/fix/Application.cpp
-        include/fix/ApplicationWrapper.h
-        src/fix/ApplicationWrapper.cpp
+        include/fix/MDApplicationBase.h
+        src/fix/MDApplicationBase.cpp
+        include/fix/MDApplication.h
+        src/fix/MDApplication.cpp
+        include/fix/GWApplication.h
+        src/fix/GWApplication.cpp
         include/fix/FIXRunner.h
         src/fix/FIXRunner.cpp
+        include/fix/GWRunner.h
+        src/fix/GWRunner.cpp
 )
 
 set(UTIL_SOURCES

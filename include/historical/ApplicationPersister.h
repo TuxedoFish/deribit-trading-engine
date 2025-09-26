@@ -1,13 +1,13 @@
 // ApplicationPersister.h - Logging extension
 #pragma once
 
-#include "../fix/Application.h"
+#include "../fix/MDApplicationBase.h"
 #include "../marketdata/MarketDataLogger.h"
 #include "../util/SimpleConfig.h"
 #include <memory>
 #include <string>
 
-class ApplicationPersister : public Application {
+class ApplicationPersister : public MDApplicationBase {
 private:
     std::unique_ptr<MarketDataLogger> m_logger;
 

@@ -1,13 +1,13 @@
 # pragma once
 
-#include "Application.h"
+#include "MDApplicationBase.h"
 #include "../marketdata/MessageProcessor.h"
 
-class ApplicationWrapper : public Application
+class MDApplication : public MDApplicationBase
 {
 public:
-    explicit ApplicationWrapper(SimpleConfig& config);
-    virtual ~ApplicationWrapper() = default;
+    explicit MDApplication(SimpleConfig& config);
+    virtual ~MDApplication() = default;
 
     // Override FIX::Application interface to pass to processor
     void fromAdmin(const FIX::Message& message, const FIX::SessionID& sessionID) noexcept override;

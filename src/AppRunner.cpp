@@ -6,7 +6,7 @@ AppRunner::AppRunner(const SimpleConfig& config) : config_{ config } {
 int AppRunner::runMarketdata()
 {
     // Create application
-    ApplicationWrapper application(config_);
+    MDApplication application(config_);
 
     // Create FIX runner and start session
     FIXRunner fixRunner(config_);
@@ -15,6 +15,18 @@ int AppRunner::runMarketdata()
     return fixRunner.run(application, startupMessage);
 }
 
+int AppRunner::runGateway()
+{
+    // Create application
+    GWApplication application(config_);
+
+    // Create FIX runner and start session
+    FIXRunner fixRunner(config_);
+    GWRunner gatewayRunner(config_);
+    std::string startupMessage = "Publishing inbound executions to: " + config_.getString("gw_inbound_file_path");
+
+    return fixRunner.run(application, startupMessage, [&gatewayRunner]() { gatewayRunner.run(); });
+}
 
 int AppRunner::runProcessRawMarketdata() {
     MarketdataHistoricalRunner runner(config_);

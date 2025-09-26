@@ -14,18 +14,19 @@
 #include <string>
 #include <openssl/rand.h>
 #include <openssl/sha.h>
-#include <algorithm> 
+#include <algorithm>
 #include <vector>
 #include "../util/AuthHandler.h"
 #include "../marketdata/MarketDataLogger.h"
 #include "../util/SimpleConfig.h"
+#include "../marketdata/FixUtils.h"
 
 using encoding_t = unsigned char const*;
 
-class Application : public FIX::Application, public FIX::MessageCracker
+class MDApplicationBase : public FIX::Application, public FIX::MessageCracker
 {
 public:
-    Application(SimpleConfig& config) : m_config{ config } {}
+    MDApplicationBase(SimpleConfig& config) : m_config{ config } {}
 
     // Application interface
     void onCreate(const FIX::SessionID&) override;
@@ -39,9 +40,6 @@ public:
     // Deribit marketdata functionality
     void subscribe(std::string[], int);
     void getSymbols();
-
-    // Helper functions
-    static void logFixMessage(const std::string& prefix, const FIX::Message&);
 
 private:
     FIX::SessionID m_sessionID;

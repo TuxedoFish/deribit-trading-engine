@@ -5,6 +5,17 @@
 
 ## Apps
 
+### Marketdata service
+- Streams marketdata from Deribit to an SBE queue.
+- Settings store under settings/settings.md-<live|testnet>.txt
+  `.\out\build\x64-debug\deribit-md\deribit-md.exe --app md-<live|testnet>`
+- 
+### Gateway service
+- Polls marketdata and orders queues and send out over FIX to Deribit
+  - Pushes order updates on an outbound queue 
+- Settings store under settings/settings.gw-<live|testnet>.txt
+  `.\out\build\x64-debug\deribit-md\deribit-md.exe --app gw-<live|testnet>`
+
 ### Marketdata historical service
 - Persist FIX messages to an output folder.
 - Settings store under settings/settings.md-hist.txt

@@ -21,6 +21,19 @@ int main(int argc, char* argv[])
         AppRunner app(config);
         return app.runProcessRawMarketdata();
     }
+    if (applicationName.rfind("gw-testnet", 0) == 0) {
+        std::cout << "Running as: " << applicationName << std::endl;
+        SimpleConfig config("config/settings.gw-testnet.txt");
+        AppRunner app(config);
+        return app.runGateway();
+    }
+    if (applicationName.rfind("gw-prod", 0) == 0) {
+        // TODO: Not safe to trial this
+        // std::cout << "Running as: " << applicationName << std::endl;
+        // SimpleConfig config("config/settings.gw-prod.txt");
+        // AppRunner app(config);
+        // return app.runMarketdata();
+    }
     if (applicationName.rfind("md-prod", 0) == 0) {
         std::cout << "Running as: " << applicationName << std::endl;
         SimpleConfig config("config/settings.md-prod.txt");

@@ -1,25 +1,25 @@
-#include "../../include/fix/Application.h"
+#include "../../include/fix/MDApplicationBase.h"
 
-void Application::onCreate(const FIX::SessionID& sessionID)
+void MDApplicationBase::onCreate(const FIX::SessionID& sessionID)
 {
     std::cout << "Session created: " << sessionID << std::endl;
     m_sessionID = sessionID;
 }
 
-void Application::onLogon(const FIX::SessionID& sessionID)
+void MDApplicationBase::onLogon(const FIX::SessionID& sessionID)
 {
     std::cout << "Logged on to Deribit: " << sessionID << std::endl;
     m_loggedOn = true;
     getSymbols();
 }
 
-void Application::onLogout(const FIX::SessionID& sessionID)
+void MDApplicationBase::onLogout(const FIX::SessionID& sessionID)
 {
     std::cout << "Logged out from Deribit: " << sessionID << std::endl;
     m_loggedOn = false;
 }
 
-void Application::toAdmin(FIX::Message& message, const FIX::SessionID& sessionID)
+void MDApplicationBase::toAdmin(FIX::Message& message, const FIX::SessionID& sessionID)
 {
     // Add authentication for logon messages
     FIX::MsgType msgType;
@@ -27,61 +27,27 @@ void Application::toAdmin(FIX::Message& message, const FIX::SessionID& sessionID
 
     if (msgType.getValue() == FIX::MsgType_Logon)
     {
-        std::string user = m_config.getString("deribit_client_id");
-        std::string secret = m_config.getString("deribit_client_secret");
-
-        // Creates the raw data
-        std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
-        std::string timestamp_in_ms = std::to_string(ms.count());
-        
-        // Creating the random nonce (32 random bytes encoded in base64)
-        constexpr int nonce_to_encode_size = 32;
-        unsigned char nonce_to_encode[nonce_to_encode_size];
-        if (!RAND_bytes(nonce_to_encode, nonce_to_encode_size)) {
-            throw(std::runtime_error("Impossible to create random data to login"));
-        }
-        encoding_t nonce = reinterpret_cast<encoding_t>(nonce_to_encode);
-        std::string nonce64 = AuthHandler::base64_encode(nonce, nonce_to_encode_size);
-
-        // Creating raw data with format timestamp.nonce64
-        std::stringstream raw_data_stream;
-        raw_data_stream << timestamp_in_ms << "." << nonce64;
-        std::string raw_data = raw_data_stream.str();
-        std::string raw_and_secret = raw_data + secret;
-        std::cout << "Logging on with timestamp=" << timestamp_in_ms << " nonce64=" << nonce64 << " raw_data=" << raw_data << "raw_and_secret=" << raw_and_secret << std::endl;
-
-        // Creates the password field
-        unsigned char hash[SHA256_DIGEST_LENGTH];
-        SHA256_CTX sha256;
-        SHA256_Init(&sha256);
-        SHA256_Update(&sha256, raw_and_secret.c_str(), raw_and_secret.size());
-        SHA256_Final(hash, &sha256);
-        std::string password_sha_base64 = AuthHandler::base64_encode(hash, SHA256_DIGEST_LENGTH);
-
-        message.setField(FIX::Username(user));
-        message.setField(FIX::RawData(raw_data));
-        message.setField(FIX::Password(password_sha_base64));
-        std::cout << "Sending logon with credentials" << std::endl;
+        FixUtils::addDeribitAuth(message, m_config);
     }
 }
 
-void Application::toApp(FIX::Message& message, const FIX::SessionID& sessionID) noexcept
+void MDApplicationBase::toApp(FIX::Message& message, const FIX::SessionID& sessionID) noexcept
 {
-    logFixMessage("Sending: ", message);
+    FixUtils::logFixMessage("Sending: ", message);
 }
 
-void Application::fromAdmin(const FIX::Message& message, const FIX::SessionID& sessionID) noexcept
+void MDApplicationBase::fromAdmin(const FIX::Message& message, const FIX::SessionID& sessionID) noexcept
 {
-    logFixMessage("Received admin: ", message);
+    FixUtils::logFixMessage("Received admin: ", message);
 }
 
-void Application::fromApp(const FIX::Message& message, const FIX::SessionID& sessionID) noexcept
+void MDApplicationBase::fromApp(const FIX::Message& message, const FIX::SessionID& sessionID) noexcept
 {    
     // This automatically calls down to the corresponding onMessage implementation
     crack(message, sessionID);
 }
 
-void Application::getSymbols()
+void MDApplicationBase::getSymbols()
 {
     // Create SecurityListRequest message
     FIX::Message secListRequest;
@@ -111,7 +77,7 @@ void Application::getSymbols()
     }
 }
 
-void Application::subscribe(std::string symbols[], int nSymbols)
+void MDApplicationBase::subscribe(std::string symbols[], int nSymbols)
 {
     // Create market data request with default constructor
     FIX44::MarketDataRequest mdRequest;
@@ -150,26 +116,26 @@ void Application::subscribe(std::string symbols[], int nSymbols)
     FIX::Session::sendToTarget(mdRequest, m_sessionID);
 }
 
-void Application::onMessage(const FIX44::MarketDataRequest& message, const FIX::SessionID& sessionID) {
+void MDApplicationBase::onMessage(const FIX44::MarketDataRequest& message, const FIX::SessionID& sessionID) {
     // logFixMessage("Received market data request: ", message);
 }
 
-void Application::onMessage(const FIX44::MarketDataRequestReject& message, const FIX::SessionID& sessionID) {
+void MDApplicationBase::onMessage(const FIX44::MarketDataRequestReject& message, const FIX::SessionID& sessionID) {
     // std::cout << "received market data request reject" << std::endl;
 }
 
-void Application::onMessage(const FIX44::MarketDataSnapshotFullRefresh& message, const FIX::SessionID& sessionID) {
+void MDApplicationBase::onMessage(const FIX44::MarketDataSnapshotFullRefresh& message, const FIX::SessionID& sessionID) {
     FIX::Symbol symbol;
     message.get(symbol);
     std::cout << "Received MarketDataSnapshotFullRefresh for: " << symbol.getValue() << std::endl;
 }
 
-void Application::onMessage(const FIX44::MarketDataIncrementalRefresh& message, const FIX::SessionID& sessionID) {
+void MDApplicationBase::onMessage(const FIX44::MarketDataIncrementalRefresh& message, const FIX::SessionID& sessionID) {
     // std::cout << "received market data incremental refresh" << std::endl;
 }
 
-void Application::onMessage(const FIX44::SecurityList& message, const FIX::SessionID& sessionID) {
-    logFixMessage("Received SecurityList: ", message);
+void MDApplicationBase::onMessage(const FIX44::SecurityList& message, const FIX::SessionID& sessionID) {
+    FixUtils::logFixMessage("Received SecurityList: ", message);
 
     FIX::NoRelatedSym noSecuritiesField;
     message.get(noSecuritiesField);
@@ -190,12 +156,6 @@ void Application::onMessage(const FIX44::SecurityList& message, const FIX::Sessi
         std::cout << symbols[i] << ", ";
     }
     std::cout << std::endl;
-    Application::subscribe(symbols, noSecurities);
+    MDApplicationBase::subscribe(symbols, noSecurities);
 }
 
-void Application::logFixMessage(const std::string& prefix, const FIX::Message& message)
-{
-    std::string fixString = message.toString();
-    std::replace(fixString.begin(), fixString.end(), '\001', '|');
-    std::cout << prefix << ": " << fixString << std::endl;
-}

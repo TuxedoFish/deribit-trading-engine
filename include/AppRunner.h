@@ -11,8 +11,10 @@
 #include <boost/iostreams/device/mapped_file.hpp>
 #include <string_view>
 #include <filesystem>
-#include "fix/Application.h"
-#include "fix/ApplicationWrapper.h"
+#include "fix/MDApplicationBase.h"
+#include "fix/MDApplication.h"
+#include "fix/GWApplication.h"
+#include "fix/GWRunner.h"
 #include "util/SimpleConfig.h"
 #include "historical/ApplicationPersister.h"
 #include "util/CmdLineOptions.h"
@@ -32,6 +34,7 @@ class AppRunner
 public:
 	explicit AppRunner(const SimpleConfig& config);
 	int runMarketdata();
+	int runGateway();
 	int runProcessRawMarketdata();
 	int runMarketdataHistoricalStorage();
 private:
