@@ -1,8 +1,8 @@
 // ApplicationPersister.h - Logging extension
 #pragma once
 
-#include "../fix/MDApplicationBase.h"
-#include "../marketdata/MarketDataLogger.h"
+#include "../marketdata/MDApplicationBase.h"
+#include "MarketDataLogger.h"
 #include "../util/SimpleConfig.h"
 #include <memory>
 #include <string>

@@ -17,6 +17,7 @@
 #include "../../generated/com_liversedge_messages/SecurityStatus.h"
 #include "../../generated/com_liversedge_messages/MDFullBook.h"
 #include "../../generated/com_liversedge_messages/MDUpdate.h"
+#include "../../generated/com_liversedge_messages/NewOrder.h"
 
 class SBEQueuePoller
 {
@@ -69,6 +70,7 @@ private:
     com::liversedge::messages::SecurityStatus m_securityStatusFlyweight;
     com::liversedge::messages::MDFullBook m_mdFullBookFlyweight;
     com::liversedge::messages::MDUpdate m_mdUpdateFlyweight;
+    com::liversedge::messages::NewOrder m_newOrderFlyweight;
 
     // Helper methods
     bool fillBuffer();

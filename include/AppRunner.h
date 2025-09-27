@@ -11,10 +11,10 @@
 #include <boost/iostreams/device/mapped_file.hpp>
 #include <string_view>
 #include <filesystem>
-#include "fix/MDApplicationBase.h"
-#include "fix/MDApplication.h"
-#include "fix/GWApplication.h"
-#include "fix/GWRunner.h"
+#include "marketdata/MDApplicationBase.h"
+#include "marketdata/MDApplication.h"
+#include "gateway/GWApplication.h"
+#include "gateway/GWRunner.h"
 #include "util/SimpleConfig.h"
 #include "historical/ApplicationPersister.h"
 #include "util/CmdLineOptions.h"

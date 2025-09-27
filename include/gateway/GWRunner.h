@@ -5,7 +5,7 @@
 #include <memory>
 #include "../util/SimpleConfig.h"
 #include "../sbe/SBEQueuePoller.h"
-#include "../sbe/RefDataHolder.h"
+#include "RefDataHolder.h"
 
 class GWRunner
 {

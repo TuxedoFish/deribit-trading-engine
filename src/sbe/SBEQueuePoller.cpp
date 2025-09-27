@@ -116,6 +116,15 @@ bool SBEQueuePoller::next()
             break;
         }
 
+        case com::liversedge::messages::NewOrder::sbeTemplateId():
+        {
+            m_newOrderFlyweight.wrapForDecode(m_buffer.data(), messageDataOffset,
+                                   blockLength, m_messageHeader.version(), m_bufferLimit);
+            m_listener.onNewOrder(m_newOrderFlyweight, timestamp);
+            actualMessageLength = m_newOrderFlyweight.encodedLength() + m_newOrderFlyweight.clientOrderId().length();
+            break;
+        }
+
         default:
             // Unknown message type - skip using block length
             actualMessageLength = blockLength;
@@ -133,12 +142,27 @@ bool SBEQueuePoller::fillBuffer()
 {
     // In live mode, refresh file size to detect new data
     if (m_isLiveMode) {
-        // For memory-mapped files, we'd need to remap to see new data
-        // For now, just use the original size
+        // Check if file has grown by getting current file size
+        boost::filesystem::path filePath(m_dataDirectory + "/messages.sbe");
+        if (boost::filesystem::exists(filePath)) {
+            std::size_t currentFileSize = boost::filesystem::file_size(filePath);
+            if (currentFileSize > m_fileSize) {
+                // File has grown, remap it
+                m_mappedFile.reset();
+                m_mappedFile = std::make_unique<boost::iostreams::mapped_file_source>(filePath.string());
+                m_fileData = m_mappedFile->data();
+                m_fileSize = m_mappedFile->size();
+            }
+        }
     }
 
     if (m_filePosition >= m_fileSize) {
-        return false; // End of file
+        if (m_isLiveMode) {
+            // In live mode, no data available yet but don't give up
+            return false;
+        } else {
+            return false; // End of file in non-live mode
+        }
     }
 
     // Calculate how much data we can read

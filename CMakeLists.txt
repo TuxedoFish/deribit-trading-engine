@@ -45,16 +45,16 @@ set(MAIN_SOURCES
 )
 
 set(FIX_SOURCES
-        include/fix/MDApplicationBase.h
-        src/fix/MDApplicationBase.cpp
-        include/fix/MDApplication.h
-        src/fix/MDApplication.cpp
-        include/fix/GWApplication.h
-        src/fix/GWApplication.cpp
+        include/marketdata/MDApplicationBase.h
+        src/marketdata/MDApplicationBase.cpp
+        include/marketdata/MDApplication.h
+        src/marketdata/MDApplication.cpp
+        include/gateway/GWApplication.h
+        src/gateway/GWApplication.cpp
         include/fix/FIXRunner.h
         src/fix/FIXRunner.cpp
-        include/fix/GWRunner.h
-        src/fix/GWRunner.cpp
+        include/gateway/GWRunner.h
+        src/gateway/GWRunner.cpp
 )
 
 set(UTIL_SOURCES
@@ -71,8 +71,8 @@ set(UTIL_SOURCES
 )
 
 set(MARKETDATA_SOURCES
-        include/marketdata/MarketDataLogger.h
-        src/marketdata/MarketDataLogger.cpp
+        include/historical/MarketDataLogger.h
+        src/historical/MarketDataLogger.cpp
         include/marketdata/MessageProcessor.h
         src/marketdata/MessageProcessor.cpp
         include/sbe/SBEBinaryWriter.h
@@ -80,13 +80,13 @@ set(MARKETDATA_SOURCES
         include/sbe/SBEMessageListener.h
         include/sbe/SBEQueuePoller.h
         src/sbe/SBEQueuePoller.cpp
-        include/sbe/SecurityInfo.h
-        src/sbe/SecurityInfo.cpp
-        include/sbe/RefDataHolder.h
-        src/sbe/RefDataHolder.cpp
-        include/fix/FixCustomTags.h
-        include/fix/FixUtils.h
-        src/fix/FixUtils.cpp
+        include/gateway/SecurityInfo.h
+        src/gateway/SecurityInfo.cpp
+        include/gateway/RefDataHolder.h
+        src/gateway/RefDataHolder.cpp
+        include/fix/FIXCustomTags.h
+        include/fix/FIXUtils.h
+        src/fix/FIXUtils.cpp
 )
 
 set(HISTORICAL_SOURCES

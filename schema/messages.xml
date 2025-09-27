@@ -102,6 +102,59 @@
             <validValue name="CHANGE" description="Update existing level">1</validValue>
             <validValue name="DELETE" description="Remove level">2</validValue>
         </enum>
+
+        <enum name="Side" encodingType="uint8">
+            <validValue name="BUY" description="Buy side">0</validValue>
+            <validValue name="SELL" description="Sell side">1</validValue>
+        </enum>
+
+        <enum name="OrderType" encodingType="uint8">
+            <validValue name="MARKET" description="Market order">0</validValue>
+            <validValue name="LIMIT" description="Limit order">1</validValue>
+            <validValue name="STOP" description="Stop order">2</validValue>
+            <validValue name="STOP_LIMIT" description="Stop limit order">3</validValue>
+        </enum>
+
+        <enum name="TimeInForce" encodingType="uint8">
+            <validValue name="IOC" description="Immediate or cancel">0</validValue>
+            <validValue name="FOK" description="Fill or kill">1</validValue>
+            <validValue name="GTC" description="Good till cancel">2</validValue>
+            <validValue name="DAY" description="Good for day">3</validValue>
+        </enum>
+
+        <enum name="RejectReason" encodingType="uint8">
+            <validValue name="ORDER_NOT_FOUND" description="Order not found (already filled/cancelled)">0</validValue>
+        </enum>
+
+        <enum name="OrdStatus" encodingType="uint8">
+            <validValue name="NEW" description="Order accepted">0</validValue>
+            <validValue name="PARTIALLY_FILLED" description="Order partially filled">1</validValue>
+            <validValue name="FILLED" description="Order completely filled">2</validValue>
+            <validValue name="CANCELLED" description="Order cancelled">3</validValue>
+            <validValue name="REJECTED" description="Order rejected">4</validValue>
+        </enum>
+
+        <enum name="OrdRejReason" encodingType="uint8">
+            <validValue name="NO_REJECT" description="No reject (request accepted)">0</validValue>
+            <validValue name="UNKNOWN_SYMBOL" description="Unknown symbol">1</validValue>
+            <validValue name="EXCHANGE_CLOSED" description="Exchange closed">2</validValue>
+            <validValue name="ORDER_EXCEEDS_LIMIT" description="Order exceeds limit">3</validValue>
+            <validValue name="TOO_LATE_TO_ENTER" description="Too late to enter">4</validValue>
+            <validValue name="UNKNOWN_ORDER" description="Unknown order">5</validValue>
+            <validValue name="DUPLICATE_ORDER" description="Duplicate Order (e.g. dupe ClOrdID)">6</validValue>
+            <validValue name="DUPLICATE_VERBAL_ORDER" description="Duplicate of a verbally communicated order">7</validValue>
+            <validValue name="STALE_ORDER" description="Stale order">8</validValue>
+            <validValue name="TRADE_ALONG_REQUIRED" description="Trade along required">9</validValue>
+            <validValue name="INVALID_INVESTOR_ID" description="Invalid Investor ID">10</validValue>
+            <validValue name="UNSUPPORTED_ORDER_CHARACTERISTIC" description="Unsupported order characteristic">11</validValue>
+            <validValue name="SURVEILLANCE_OPTION" description="Surveillance Option">12</validValue>
+            <validValue name="INCORRECT_QUANTITY" description="Incorrect quantity">13</validValue>
+            <validValue name="INCORRECT_ALLOCATED_QUANTITY" description="Incorrect allocated quantity">14</validValue>
+            <validValue name="UNKNOWN_ACCOUNT" description="Unknown account(s)">15</validValue>
+            <validValue name="PRICE_EXCEEDS_PRICE_BAND" description="Price exceeds current price band">16</validValue>
+            <validValue name="INVALID_PRICE_INCREMENT" description="Invalid price increment">18</validValue>
+            <validValue name="OTHER" description="Other">99</validValue>
+        </enum>
     </types>
 
     <sbe:message name="ConnectionStatus" id="100" description="Security Definition Message">
@@ -157,6 +210,52 @@
             <field name="price" id="1" type="Price" description="Ask price."/>
             <field name="qty" id="2" type="Qty" description="Ask quantity."/>
         </group>
+    </sbe:message>
+
+    <sbe:message name="NewOrder" id="105" description="New Order Request">
+        <field name="timestamp" id="1" type="uint64" description="Timestamp in nanoseconds."/>
+        <field name="securityId" id="2" type="int32" description="Internal security identifier."/>
+        <field name="side" id="3" type="Side" description="Order side (buy/sell)."/>
+        <field name="orderType" id="4" type="OrderType" description="Order type."/>
+        <field name="timeInForce" id="5" type="TimeInForce" description="Time in force."/>
+        <field name="price" id="6" type="Price" description="Order price."/>
+        <field name="quantity" id="7" type="Qty" description="Order quantity."/>
+        <field name="isPostOnly" id="8" type="uint8" description="Post-only flag (0=false, 1=true)."/>
+        <field name="clientOrderId" id="9" type="VarStringEncoding" description="Client-assigned order identifier."/>
+    </sbe:message>
+
+    <sbe:message name="CancelOrder" id="106" description="Cancel Order Request">
+        <field name="timestamp" id="1" type="uint64" description="Timestamp in nanoseconds."/>
+        <field name="securityId" id="2" type="int32" description="Internal security identifier."/>
+        <field name="clientOrderId" id="3" type="VarStringEncoding" description="Client-assigned order identifier for this cancel request."/>
+        <field name="origClientOrderId" id="4" type="VarStringEncoding" description="Original client order identifier to cancel."/>
+    </sbe:message>
+
+    <sbe:message name="OrderCancelReject" id="107" description="Order Cancel Reject Response">
+        <field name="timestamp" id="1" type="uint64" description="Timestamp in nanoseconds."/>
+        <field name="securityId" id="2" type="int32" description="Internal security identifier."/>
+        <field name="clientOrderId" id="3" type="VarStringEncoding" description="Client order identifier from cancel request."/>
+        <field name="origClientOrderId" id="4" type="VarStringEncoding" description="Original client order identifier that failed to cancel."/>
+        <field name="rejectReason" id="5" type="RejectReason" description="Categorized reason for cancel rejection."/>
+        <field name="rejectReasonString" id="6" type="VarStringEncoding" description="Human-readable reason for cancel rejection."/>
+    </sbe:message>
+
+    <sbe:message name="ExecutionReport" id="108" description="Execution Report">
+        <field name="timestamp" id="1" type="uint64" description="Timestamp in nanoseconds."/>
+        <field name="securityId" id="2" type="int32" description="Internal security identifier."/>
+        <field name="origClientOrderId" id="3" type="VarStringEncoding" description="Original client order identifier."/>
+        <field name="clientOrderId" id="4" type="VarStringEncoding" description="Client order identifier assigned by Deribit."/>
+        <field name="ordStatus" id="5" type="OrdStatus" description="Order status."/>
+        <field name="side" id="6" type="Side" description="Order side (buy/sell)."/>
+        <field name="transactTime" id="7" type="uint64" description="Transaction time in nanoseconds."/>
+        <field name="leavesQty" id="8" type="Qty" description="Quantity remaining to be filled."/>
+        <field name="cumQty" id="9" type="Qty" description="Cumulative quantity filled."/>
+        <field name="orderQty" id="10" type="Qty" description="Total order quantity."/>
+        <field name="price" id="11" type="Price" description="Order price."/>
+        <field name="ordRejReason" id="12" type="OrdRejReason" description="Order rejection reason."/>
+        <field name="lastPx" id="13" type="Price" presence="optional" description="Last fill price."/>
+        <field name="lastQty" id="14" type="Qty" presence="optional" description="Last fill quantity."/>
+        <field name="text" id="15" type="VarStringEncoding" description="Free format text."/>
     </sbe:message>
 
 </sbe:messageSchema>

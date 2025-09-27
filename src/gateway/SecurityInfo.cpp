@@ -1,4 +1,4 @@
-#include "../../include/sbe/SecurityInfo.h"
+#include "../../include/gateway/SecurityInfo.h"
 #include "../../include/sbe/SBEUtils.h"
 #include <sstream>
 

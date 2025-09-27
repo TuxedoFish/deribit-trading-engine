@@ -1,4 +1,4 @@
-#include "../../include/fix/FixUtils.h"
+#include "../../include/fix/FIXUtils.h"
 
 using encoding_t = unsigned char const*;
 

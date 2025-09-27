@@ -1,7 +1,7 @@
 # pragma once
 
 #include "MDApplicationBase.h"
-#include "../marketdata/MessageProcessor.h"
+#include "MessageProcessor.h"
 
 class MDApplication : public MDApplicationBase
 {

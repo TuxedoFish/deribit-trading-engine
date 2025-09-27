@@ -1,5 +1,4 @@
-#ifndef APPLICATION_H
-#define APPLICATION_H
+# pragma once
 
 #include "quickfix/Application.h"
 #include "quickfix/MessageCracker.h"
@@ -17,16 +16,16 @@
 #include <algorithm>
 #include <vector>
 #include "../util/AuthHandler.h"
-#include "../marketdata/MarketDataLogger.h"
+#include "../historical/MarketDataLogger.h"
 #include "../util/SimpleConfig.h"
-#include "FixUtils.h"
+#include "../fix/FIXUtils.h"
 
 using encoding_t = unsigned char const*;
 
-class MDApplicationBase : public FIX::Application, public FIX::MessageCracker
+class GWApplication : public FIX::Application, public FIX::MessageCracker
 {
 public:
-    MDApplicationBase(SimpleConfig& config) : m_config{ config } {}
+    GWApplication(SimpleConfig& config) : m_config{ config } {}
 
     // Application interface
     void onCreate(const FIX::SessionID&) override;
@@ -37,10 +36,6 @@ public:
     void fromAdmin(const FIX::Message&, const FIX::SessionID&) noexcept;
     void fromApp(const FIX::Message&, const FIX::SessionID&) noexcept;
 
-    // Deribit marketdata functionality
-    void subscribe(std::string[], int);
-    void getSymbols();
-
 private:
     FIX::SessionID m_sessionID;
     bool m_loggedOn = false;
@@ -48,11 +43,4 @@ private:
 
     // Overloaded onMessage
     void onMessage(const FIX44::MarketDataRequest&, const FIX::SessionID&);
-    void onMessage(const FIX44::MarketDataRequestReject&, const FIX::SessionID&);
-    void onMessage(const FIX44::MarketDataSnapshotFullRefresh&, const FIX::SessionID&);
-    void onMessage(const FIX44::MarketDataIncrementalRefresh&, const FIX::SessionID&);
-    void onMessage(const FIX44::SecurityList&, const FIX::SessionID&);
-
 };
-
-#endif

@@ -1,4 +1,4 @@
-#include "../../include/sbe/RefDataHolder.h"
+#include "../../include/gateway/RefDataHolder.h"
 #include "../../generated/com_liversedge_messages/ActionEnum.h"
 #include <iostream>
 

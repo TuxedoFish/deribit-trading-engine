@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 #include <memory>
-#include "SBEMessageListener.h"
+#include "../sbe/SBEMessageListener.h"
 #include "SecurityInfo.h"
 #include "../../generated/com_liversedge_messages/ActionEnum.h"
 
@@ -17,6 +17,10 @@ public:
     void onSecurityStatus(const com::liversedge::messages::SecurityStatus& decoder, std::uint64_t timestamp) override {}
     void onMDUpdate(const com::liversedge::messages::MDUpdate& decoder, std::uint64_t timestamp) override {}
     void onMDFullBook(const com::liversedge::messages::MDFullBook& decoder, std::uint64_t timestamp) override {}
+    void onNewOrder(const com::liversedge::messages::NewOrder& decoder, std::uint64_t timestamp) override {}
+    void onCancelOrder(const com::liversedge::messages::CancelOrder& decoder, std::uint64_t timestamp) override {}
+    void onOrderCancelReject(const com::liversedge::messages::OrderCancelReject& decoder, std::uint64_t timestamp) override {}
+    void onExecutionReport(const com::liversedge::messages::ExecutionReport& decoder, std::uint64_t timestamp) override {}
 
     // Security lookup
     const SecurityInfo* getSecurityInfo(std::int32_t securityId) const;

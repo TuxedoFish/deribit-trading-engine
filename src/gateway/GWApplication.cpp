@@ -1,4 +1,4 @@
-#include "../../include/fix/GWApplication.h"
+#include "../../include/gateway/GWApplication.h"
 
 void GWApplication::onCreate(const FIX::SessionID& sessionID)
 {

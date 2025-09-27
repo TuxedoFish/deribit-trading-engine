@@ -1,11 +1,19 @@
-#include "../../include/fix/GWRunner.h"
+#include "../../include/gateway/GWRunner.h"
 #include <boost/filesystem.hpp>
+#include <iostream>
+#include <termios.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 GWRunner::GWRunner(const SimpleConfig& config) : m_config(config) {
     setupPollers();
 }
 
 void GWRunner::run() {
+    // Set stdin to non-blocking mode
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+
     while (true) {
         // Poll the marketdata queue
         while (m_mdPoller->next()) {
@@ -14,15 +22,20 @@ void GWRunner::run() {
         while (m_gwInPoller->next()) {
         }
 
-        std::string value;
-        std::cin >> value;
-
-        if (value == "q") {
-            break;
+        // Non-blocking check for input
+        char c;
+        if (read(STDIN_FILENO, &c, 1) > 0) {
+            if (c == 'q') {
+                break;
+            }
         }
 
-        std::cout << std::endl;
+        // Small sleep to prevent 100% CPU usage
+        usleep(1000); // 1ms sleep
     }
+
+    // Restore stdin to blocking mode
+    fcntl(STDIN_FILENO, F_SETFL, flags);
 }
 
 void GWRunner::setupPollers() {
@@ -38,11 +51,12 @@ std::unique_ptr<SBEQueuePoller> GWRunner::createPoller(std::string dataDirectory
     boost::filesystem::path path = boost::filesystem::path(dataDirectory) / "messages.sbe";
     std::cout << "Reading from: " << path << std::endl;
 
-    // Only try to read if the file exists
+    // Only try to read if the file exists, enable live mode for continuous reading
     if (boost::filesystem::exists(path)) {
-        poller->readFrom(path);
+        poller->readFrom(path, true); // true = live mode
     } else {
         std::cout << "No messages.sbe file found at: " << path << std::endl;
+        std::cout << "Will poll for new file creation..." << std::endl;
     }
     return poller;
 }
