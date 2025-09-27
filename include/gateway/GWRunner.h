@@ -5,7 +5,7 @@
 #include <memory>
 #include "../util/SimpleConfig.h"
 #include "../sbe/SBEQueuePoller.h"
-#include "RefDataHolder.h"
+#include "OrdersHandler.h"
 
 class GWRunner
 {
@@ -18,7 +18,7 @@ public:
 
 private:
     const SimpleConfig& m_config;
-    std::unique_ptr<RefDataHolder> m_refDataHolder;
+    std::unique_ptr<OrdersHandler> m_ordersHandler;
     std::unique_ptr<SBEQueuePoller> m_mdPoller;
     std::unique_ptr<SBEQueuePoller> m_gwInPoller;
 

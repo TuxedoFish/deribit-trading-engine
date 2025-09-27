@@ -49,12 +49,24 @@ set(FIX_SOURCES
         src/marketdata/MDApplicationBase.cpp
         include/marketdata/MDApplication.h
         src/marketdata/MDApplication.cpp
-        include/gateway/GWApplication.h
-        src/gateway/GWApplication.cpp
         include/fix/FIXRunner.h
         src/fix/FIXRunner.cpp
+        include/fix/FIXCustomTags.h
+        include/fix/FIXUtils.h
+        src/fix/FIXUtils.cpp
+)
+
+set(GATEWAY_SOURCES
+        include/gateway/GWApplication.h
+        src/gateway/GWApplication.cpp
         include/gateway/GWRunner.h
         src/gateway/GWRunner.cpp
+        include/gateway/SecurityInfo.h
+        src/gateway/SecurityInfo.cpp
+        include/gateway/RefDataHolder.h
+        src/gateway/RefDataHolder.cpp
+        include/gateway/OrdersHandler.h
+        src/gateway/OrdersHandler.cpp
 )
 
 set(UTIL_SOURCES
@@ -80,13 +92,6 @@ set(MARKETDATA_SOURCES
         include/sbe/SBEMessageListener.h
         include/sbe/SBEQueuePoller.h
         src/sbe/SBEQueuePoller.cpp
-        include/gateway/SecurityInfo.h
-        src/gateway/SecurityInfo.cpp
-        include/gateway/RefDataHolder.h
-        src/gateway/RefDataHolder.cpp
-        include/fix/FIXCustomTags.h
-        include/fix/FIXUtils.h
-        src/fix/FIXUtils.cpp
 )
 
 set(HISTORICAL_SOURCES
@@ -102,6 +107,7 @@ set(HISTORICAL_SOURCES
 add_executable(deribit-trading-engine
         ${MAIN_SOURCES}
         ${FIX_SOURCES}
+        ${GATEWAY_SOURCES}
         ${UTIL_SOURCES}
         ${MARKETDATA_SOURCES}
         ${HISTORICAL_SOURCES}

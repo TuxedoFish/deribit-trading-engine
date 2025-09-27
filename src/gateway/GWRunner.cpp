@@ -1,4 +1,5 @@
 #include "../../include/gateway/GWRunner.h"
+#include "../../include/gateway/OrdersHandler.h"
 #include <boost/filesystem.hpp>
 #include <iostream>
 #include <termios.h>
@@ -13,6 +14,16 @@ void GWRunner::run() {
     // Set stdin to non-blocking mode
     int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+
+    // Replay streams
+    std::cout << "Replaying streams..." << std::endl;
+    m_ordersHandler->setIsReplay(true);
+    while (m_mdPoller->next()) {
+    }
+    while (m_gwInPoller->next()) {
+    }
+    m_ordersHandler->setIsReplay(false);
+    std::cout << "Finished replay." << std::endl;
 
     while (true) {
         // Poll the marketdata queue
@@ -39,9 +50,10 @@ void GWRunner::run() {
 }
 
 void GWRunner::setupPollers() {
-    m_refDataHolder = std::make_unique<RefDataHolder>();
-    m_mdPoller = createPoller(m_config.getString("md_file_path"), *m_refDataHolder);
-    m_gwInPoller = createPoller(m_config.getString("gw_inbound_file_path"), *m_refDataHolder);
+    auto refDataHolder = std::make_unique<RefDataHolder>();
+    m_ordersHandler = std::make_unique<OrdersHandler>(std::move(refDataHolder));
+    m_mdPoller = createPoller(m_config.getString("md_file_path"), *m_ordersHandler);
+    m_gwInPoller = createPoller(m_config.getString("gw_inbound_file_path"), *m_ordersHandler);
 }
 
 std::unique_ptr<SBEQueuePoller> GWRunner::createPoller(std::string dataDirectory, SBEMessageListener& listener)
