@@ -16,33 +16,41 @@ void SBEQueuePoller::readFrom(const boost::filesystem::path& filePath, bool live
         throw std::runtime_error("Poller is already in valid state. Call close() first.");
     }
 
-    if (!liveMode && !boost::filesystem::exists(filePath)) {
-        throw std::runtime_error("Data file not found: " + filePath.string());
+    m_currentFilePath = filePath;
+    m_isLiveMode = liveMode;
+
+
+    if (!boost::filesystem::exists(filePath)) {
+        if (!liveMode) {
+            throw std::runtime_error("Data file not found: " + filePath.string());
+        } else {
+            // In live mode, file doesn't exist yet - just set up for polling
+            std::cout << "No messages.sbe file found at: " << filePath << std::endl;
+            std::cout << "Will poll for new file creation..." << std::endl;
+            return;
+        }
     }
 
-    try {
-        m_mappedFile = std::make_unique<boost::iostreams::mapped_file_source>(filePath.string());
-        if (!m_mappedFile->is_open()) {
-            throw std::runtime_error("Failed to open file: " + filePath.string());
-        }
-
-        m_fileData = m_mappedFile->data();
-        m_fileSize = m_mappedFile->size();
-        m_filePosition = 0;
-        m_bufferLimit = 0;
+    if (initializeFileMapping()) {
         m_isValid = true;
-        m_isLiveMode = liveMode;
-
-    } catch (const std::exception& e) {
-        closeResources();
-        throw;
+    } else {
+        throw std::runtime_error("Failed to initialize file mapping for: " + filePath.string());
     }
 }
 
 bool SBEQueuePoller::next()
 {
     if (!m_isValid) {
-        return false;
+        // In live mode, try to initialize if file becomes available
+        if (m_isLiveMode && !m_currentFilePath.empty() && boost::filesystem::exists(m_currentFilePath)) {
+            if (initializeFileMapping()) {
+                m_isValid = true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
 
     if (!fillBuffer()) {
@@ -199,6 +207,26 @@ void SBEQueuePoller::closeResources()
     if (m_mappedFile) {
         m_mappedFile.reset();
         m_fileData = nullptr;
+    }
+}
+
+bool SBEQueuePoller::initializeFileMapping()
+{
+    try {
+        m_mappedFile = std::make_unique<boost::iostreams::mapped_file_source>(m_currentFilePath.string());
+        if (!m_mappedFile->is_open()) {
+            return false;
+        }
+
+        m_fileData = m_mappedFile->data();
+        m_fileSize = m_mappedFile->size();
+        m_filePosition = 0;
+        m_bufferLimit = 0;
+        return true;
+
+    } catch (const std::exception& e) {
+        closeResources();
+        return false;
     }
 }
 

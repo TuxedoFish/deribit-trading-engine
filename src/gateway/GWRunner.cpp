@@ -65,12 +65,6 @@ std::unique_ptr<SBEQueuePoller> GWRunner::createPoller(std::string dataDirectory
     boost::filesystem::path path = boost::filesystem::path(dataDirectory) / "messages.sbe";
     std::cout << "Reading from: " << path << std::endl;
 
-    // Only try to read if the file exists, enable live mode for continuous reading
-    if (boost::filesystem::exists(path)) {
-        poller->readFrom(path, true); // true = live mode
-    } else {
-        std::cout << "No messages.sbe file found at: " << path << std::endl;
-        std::cout << "Will poll for new file creation..." << std::endl;
-    }
+    poller->readFrom(path, true); // true = live mode
     return poller;
 }

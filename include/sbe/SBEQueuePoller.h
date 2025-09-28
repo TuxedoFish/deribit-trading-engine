@@ -58,6 +58,7 @@ private:
     const char* m_fileData = nullptr;
     std::size_t m_filePosition = 0;
     std::size_t m_fileSize = 0;
+    boost::filesystem::path m_currentFilePath;
 
     // Buffer for reading
     std::vector<char> m_buffer;
@@ -75,6 +76,7 @@ private:
 
     // Helper methods
     bool fillBuffer();
+    bool initializeFileMapping();
     void closeResources();
     std::uint64_t getCurrentTimestamp() const;
 };
