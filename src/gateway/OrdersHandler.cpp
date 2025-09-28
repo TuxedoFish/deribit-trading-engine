@@ -3,14 +3,14 @@
 #include "../../include/sbe/SBEUtils.h"
 #include <iostream>
 
-OrdersHandler::OrdersHandler(std::unique_ptr<RefDataHolder> refDataHolder, GWApplication& gwApplication)
-    : m_refDataHolder(std::move(refDataHolder)), m_gwApplication(gwApplication)
+OrdersHandler::OrdersHandler(RefDataHolder& refDataHolder, GWApplication& gwApplication)
+    : m_refDataHolder(refDataHolder), m_gwApplication(gwApplication)
 {
 }
 
 void OrdersHandler::onSecurityDefinition(com::liversedge::messages::SecurityDefinition& decoder, std::uint64_t timestamp)
 {
-    m_refDataHolder->onSecurityDefinition(decoder, timestamp);
+    m_refDataHolder.onSecurityDefinition(decoder, timestamp);
 }
 
 void OrdersHandler::onNewOrder(com::liversedge::messages::NewOrder& decoder, std::uint64_t timestamp)
@@ -29,7 +29,7 @@ void OrdersHandler::onNewOrder(com::liversedge::messages::NewOrder& decoder, std
         auto quantity = SBEUtils::convertQty(decoder.quantity());
         std::string clientOrderId = SBEUtils::extractVarString(decoder.clientOrderId(), decoder.sbeBlockLength());
 
-        const SecurityInfo* secInfo = m_refDataHolder->getSecurityInfo(securityId);
+        const SecurityInfo* secInfo = m_refDataHolder.getSecurityInfo(securityId);
         if (!secInfo) {
             std::cout << "OrdersHandler: Security not found for ID: " << securityId << std::endl;
             return;
@@ -73,7 +73,7 @@ void OrdersHandler::onCancelOrder(com::liversedge::messages::CancelOrder& decode
         std::string clientOrderId = SBEUtils::extractVarString(decoder.clientOrderId(), decoder.sbeBlockLength());
         std::string origClientOrderId = SBEUtils::extractVarString(decoder.origClientOrderId(), decoder.sbeBlockLength(), clientOrderId.length());
 
-        const SecurityInfo* secInfo = m_refDataHolder->getSecurityInfo(securityId);
+        const SecurityInfo* secInfo = m_refDataHolder.getSecurityInfo(securityId);
         if (!secInfo) {
             std::cout << "OrdersHandler: Security not found for ID: " << securityId << std::endl;
             return;

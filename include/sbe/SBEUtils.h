@@ -11,6 +11,7 @@
 #include "../../generated/com_liversedge_messages/Side.h"
 #include "../../generated/com_liversedge_messages/OrderType.h"
 #include "../../generated/com_liversedge_messages/TimeInForce.h"
+#include "../../generated/com_liversedge_messages/OrdStatus.h"
 #include "../util/DecimalTypes.h"
 #include "quickfix/Fields.h"
 
@@ -38,89 +39,36 @@ public:
                 std::to_string(com::liversedge::messages::VarStringEncoding::lengthMaxValue()));
         }
 
+        // Update the field in place
         field.length(static_cast<std::uint32_t>(value.length()));
         if (value.length() > 0)
         {
-            std::memcpy(field.buffer() + field.offset() + field.varDataEncodingOffset(), value.c_str(), value.length());
+            // Append variable data to the end
+            std::memcpy(field.buffer() + parentMessage.sbePosition(), value.c_str(), value.length());
         }
 
         // Advance parent message position by the string length (length field is already included in encodedLength)
         parentMessage.sbePosition(parentMessage.sbePosition() + value.length());
     }
 
-    /**
-     * Sets a Qty field from a double value
-     * @param field The Qty field to set
-     * @param value The string value to convert and set
-     */
+    // Setting SBE
     static void setQty(com::liversedge::messages::Qty& field, const std::string& value);
-
-    /**
-     * Sets a Price field from a double value
-     * @param field The Price field to set
-     * @param value The string value to convert and set
-     */
     static void setPrice(com::liversedge::messages::Price& field, const std::string& value);
-
-    /**
-     * Sets a Date field from year, month, day
-     * @param field The Date field to set
-     * @param value The string value to convert and set
-     */
     static void setDate(com::liversedge::messages::Date& field, const std::string& value);
-
-    /**
-     * Get currency from field
-     * @param currency The Currency in string form
-     */
-    static com::liversedge::messages::Currency::Value currencyFromString(const std::string& currency);
-
-    /**
-     * Get settle type from field
-     * @param settlType The SettlType in string form
-     */
-    static com::liversedge::messages::SettlType::Value settlTypeFromString(const std::string& settlType);
-
-    /**
-     * Get security type from field
-     * @param securityType The SecurityType in string form
-     */
-    static com::liversedge::messages::SecurityType::Value securityTypeFromString(const std::string& securityType);
-
-    /**
-     * Convert Price field to decimal
-     * @param price The Price field to convert
-     */
+    // SBE -> Internal
     static Dec convertPrice(const com::liversedge::messages::Price& price);
-
-    /**
-     * Convert Qty field to decimal
-     * @param qty The Qty field to convert
-     */
     static Dec convertQty(const com::liversedge::messages::Qty& qty);
-
-    /**
-     * Extract string from VarStringEncoding field
-     * @param varString The VarStringEncoding field to extract from
-     */
     static std::string extractVarString(const com::liversedge::messages::VarStringEncoding& varString, const int encodedLength, const int variableOffset = 0);
-
-    /**
-     * Convert SBE Side to FIX Side
-     * @param sbeType The SBE Side value to convert
-     */
+    // FIX -> SBE
+    static com::liversedge::messages::Currency::Value currencyFromString(const std::string& currency);
+    static com::liversedge::messages::SettlType::Value settlTypeFromString(const std::string& settlType);
+    static com::liversedge::messages::SecurityType::Value securityTypeFromString(const std::string& securityType);
+    static com::liversedge::messages::OrdStatus::Value ordStatusFromFix(FIX::OrdStatus ordStatus);
+    static com::liversedge::messages::Side::Value sideFromFix(FIX::Side side);
+    static com::liversedge::messages::OrdRejReason::Value ordRejReasonFromFix(FIX::OrdRejReason ordRejReason);
+    // SBE -> FIX
     static FIX::Side convertSide(const com::liversedge::messages::Side::Value& sbeType);
-
-    /**
-     * Convert SBE OrderType to FIX OrdType
-     * @param sbeType The SBE OrderType value to convert
-     */
     static FIX::OrdType convertOrderType(const com::liversedge::messages::OrderType::Value& sbeType);
-
-    /**
-     * Convert SBE TimeInForce to FIX TimeInForce
-     * @param sbeType The SBE TimeInForce value to convert
-     */
     static FIX::TimeInForce convertTimeInForce(const com::liversedge::messages::TimeInForce::Value& sbeType);
 
 private:

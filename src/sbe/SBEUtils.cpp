@@ -84,6 +84,47 @@ SecurityType::Value SBEUtils::securityTypeFromString(const std::string& security
     return SecurityType::NULL_VALUE;
 }
 
+OrdRejReason::Value SBEUtils::ordRejReasonFromFix(FIX::OrdRejReason ordRejReason)
+{
+    // TODO: Implement
+    return OrdRejReason::Value::OTHER;
+}
+
+OrdStatus::Value SBEUtils::ordStatusFromFix(FIX::OrdStatus ordStatus)
+{
+    if (ordStatus == FIX::OrdStatus_NEW)
+    {
+        return OrdStatus::Value::NEW;
+    }
+    if (ordStatus == FIX::OrdStatus_PARTIALLY_FILLED)
+    {
+        return OrdStatus::Value::PARTIALLY_FILLED;
+    } else if (ordStatus == FIX::OrdStatus_FILLED)
+    {
+        return OrdStatus::Value::FILLED;
+    } else if (ordStatus == FIX::OrdStatus_CANCELED)
+    {
+        return OrdStatus::Value::CANCELLED;
+    } else if (ordStatus == FIX::OrdStatus_REJECTED)
+    {
+        return OrdStatus::Value::REJECTED;
+    }
+    return OrdStatus::Value::NULL_VALUE;
+}
+
+Side::Value SBEUtils::sideFromFix(FIX::Side side)
+{
+    if (side == FIX::Side_BUY)
+    {
+        return Side::Value::BUY;
+    }
+    if (side == FIX::Side_SELL)
+    {
+        return Side::Value::SELL;
+    }
+    return Side::Value::NULL_VALUE;
+}
+
 Dec SBEUtils::convertPrice(const Price& price)
 {
     int64_t mantissa = price.mantissa();

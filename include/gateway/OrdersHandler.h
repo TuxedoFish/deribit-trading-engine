@@ -13,7 +13,7 @@ class GWApplication;
 class OrdersHandler : public SBEMessageListener
 {
 public:
-    explicit OrdersHandler(std::unique_ptr<RefDataHolder> refDataHolder, GWApplication& gwApplication);
+    explicit OrdersHandler(RefDataHolder& refDataHolder, GWApplication& gwApplication);
     ~OrdersHandler() = default;
 
     // SBEMessageListener implementation
@@ -28,11 +28,11 @@ public:
     void onExecutionReport(com::liversedge::messages::ExecutionReport& decoder, std::uint64_t timestamp) override {}
 
     // Access to reference data
-    RefDataHolder& getRefDataHolder() { return *m_refDataHolder; }
+    RefDataHolder& getRefDataHolder() { return m_refDataHolder; }
     void setIsReplay (const bool isReplay) { m_isReplay = isReplay; }
 
 private:
     bool m_isReplay = false;
-    std::unique_ptr<RefDataHolder> m_refDataHolder;
+    RefDataHolder& m_refDataHolder;
     GWApplication& m_gwApplication;
 };

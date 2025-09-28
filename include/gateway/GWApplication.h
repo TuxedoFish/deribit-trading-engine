@@ -10,6 +10,8 @@
 #include "quickfix/fix44/SecurityList.h"
 #include "quickfix/fix44/OrderCancelReject.h"
 #include "quickfix/fix44/ExecutionReport.h"
+#include "../../generated/com_liversedge_messages/ExecutionReport.h"
+#include "../../generated/com_liversedge_messages/OrderCancelReject.h"
 #include <iostream>
 #include <chrono>
 #include <string>
@@ -21,13 +23,17 @@
 #include "../historical/MarketDataLogger.h"
 #include "../util/SimpleConfig.h"
 #include "../fix/FIXUtils.h"
+#include "../sbe/SBEBinaryWriter.h"
+#include "../sbe/SBEUtils.h"
+#include "RefDataHolder.h"
 
 using encoding_t = unsigned char const*;
 
 class GWApplication : public FIX::Application, public FIX::MessageCracker
 {
 public:
-    GWApplication(SimpleConfig& config) : m_config{ config } {}
+    GWApplication(SimpleConfig& config, RefDataHolder& refDataHolder);
+    ~GWApplication() = default;
 
     // Application interface
     void onCreate(const FIX::SessionID&) override;
@@ -46,9 +52,13 @@ private:
     FIX::SessionID m_sessionID;
     bool m_loggedOn = false;
     SimpleConfig m_config;
+    RefDataHolder& m_refDataHolder;
+    std::unique_ptr<SBEBinaryWriter> m_sbeWriter;
 
     // Overloaded onMessage
-    void onMessage(const FIX44::MarketDataRequest&, const FIX::SessionID&);
     void onMessage(const FIX44::OrderCancelReject&, const FIX::SessionID&);
     void onMessage(const FIX44::ExecutionReport&, const FIX::SessionID&);
+
+    // Helper methods
+    std::uint64_t extractSendingTimeFromFix(const FIX::Message& message) const;
 };

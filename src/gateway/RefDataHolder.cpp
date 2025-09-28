@@ -11,10 +11,20 @@ void RefDataHolder::onSecurityDefinition(com::liversedge::messages::SecurityDefi
     {
         auto securityInfo = std::make_unique<SecurityInfo>(decoder);
         std::cout << "Added security: " << securityInfo->toString() << std::endl;
+
+        // Build reverse lookup map
+        std::string symbol = securityInfo->getSymbol();
+        m_symbolToSecurityId[symbol] = securityId;
         m_securities[securityId] = std::move(securityInfo);
     }
     else if (action == com::liversedge::messages::ActionEnum::REMOVE)
     {
+        // Remove from both maps
+        auto it = m_securities.find(securityId);
+        if (it != m_securities.end() && it->second) {
+            std::string symbol = it->second->getSymbol();
+            m_symbolToSecurityId.erase(symbol);
+        }
         m_securities.erase(securityId);
     }
 }
@@ -23,4 +33,10 @@ const SecurityInfo* RefDataHolder::getSecurityInfo(std::int32_t securityId) cons
 {
     auto it = m_securities.find(securityId);
     return (it != m_securities.end()) ? it->second.get() : nullptr;
+}
+
+std::int32_t RefDataHolder::getSecurityIdBySymbol(const std::string& symbol) const
+{
+    auto it = m_symbolToSecurityId.find(symbol);
+    return (it != m_symbolToSecurityId.end()) ? it->second : 0;
 }

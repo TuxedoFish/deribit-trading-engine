@@ -8,7 +8,7 @@ SBEBinaryWriter::~SBEBinaryWriter() {
     close();
 }
 
-void SBEBinaryWriter::openNewFile(const std::string& filename) {
+void SBEBinaryWriter::openNewFile(const std::string& filename, bool append) {
     close();
     filename_ = filename;
 
@@ -18,11 +18,18 @@ void SBEBinaryWriter::openNewFile(const std::string& filename) {
         boost::filesystem::create_directories(filepath.parent_path());
     }
 
-    file_.open(filename, std::ios::binary | std::ios::trunc);
+    std::ios::openmode mode = std::ios::binary;
+    if (append) {
+        mode |= std::ios::app;
+    } else {
+        mode |= std::ios::trunc;
+    }
+
+    file_.open(filename, mode);
     if (!file_.is_open()) {
         throw std::runtime_error("Failed to open file for writing: " + filename_);
     }
-    std::cout << "Created binary file: " << filename_ << std::endl;
+    std::cout << (append ? "Opened" : "Created") << " binary file: " << filename_ << std::endl;
 }
 
 // Flush and close file

@@ -1,4 +1,5 @@
 #include "../include/AppRunner.h"
+#include "../include/gateway/RefDataHolder.h"
 
 AppRunner::AppRunner(const SimpleConfig& config) : config_{ config } {
 }
@@ -17,12 +18,15 @@ int AppRunner::runMarketdata()
 
 int AppRunner::runGateway()
 {
+    // Create RefDataHolder
+    RefDataHolder refDataHolder;
+
     // Create application
-    GWApplication application(config_);
+    GWApplication application(config_, refDataHolder);
 
     // Create FIX runner and gateway runner (passing application reference)
     FIXRunner fixRunner(config_);
-    GWRunner gatewayRunner(config_, application);
+    GWRunner gatewayRunner(config_, application, refDataHolder);
     std::string startupMessage = "Publishing inbound executions to: " + config_.getString("gw_inbound_file_path");
 
     return fixRunner.run(application, startupMessage, [&gatewayRunner]() { gatewayRunner.run(); }, true);

@@ -27,7 +27,7 @@ public:
     template<typename T>
     bool prepareMessage(T& message);
 
-    void openNewFile(const std::string& filename);
+    void openNewFile(const std::string& filename, bool append = false);
     void close();
 
     size_t getMessageCount() const;

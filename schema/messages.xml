@@ -236,8 +236,6 @@
         <field name="securityId" id="2" type="int32" description="Internal security identifier."/>
         <field name="clientOrderId" id="3" type="VarStringEncoding" description="Client order identifier from cancel request."/>
         <field name="origClientOrderId" id="4" type="VarStringEncoding" description="Original client order identifier that failed to cancel."/>
-        <field name="rejectReason" id="5" type="RejectReason" description="Categorized reason for cancel rejection."/>
-        <field name="rejectReasonString" id="6" type="VarStringEncoding" description="Human-readable reason for cancel rejection."/>
     </sbe:message>
 
     <sbe:message name="ExecutionReport" id="108" description="Execution Report">
