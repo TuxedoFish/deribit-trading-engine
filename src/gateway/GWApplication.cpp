@@ -51,3 +51,27 @@ void GWApplication::onMessage(const FIX44::MarketDataRequest& message, const FIX
     // logFixMessage("Received market data request: ", message);
 }
 
+void GWApplication::onMessage(const FIX44::OrderCancelReject& message, const FIX::SessionID& sessionID) {
+    FixUtils::logFixMessage("Received OrderCancelReject: ", message);
+}
+
+void GWApplication::onMessage(const FIX44::ExecutionReport& message, const FIX::SessionID& sessionID) {
+    FixUtils::logFixMessage("Received ExecutionReport: ", message);
+}
+
+bool GWApplication::sendMessage(FIX::Message& message)
+{
+    if (!m_loggedOn) {
+        std::cout << "Cannot send message: not logged on" << std::endl;
+        return false;
+    }
+
+    try {
+        FIX::Session::sendToTarget(message, m_sessionID);
+        return true;
+    } catch (const std::exception& e) {
+        std::cout << "Failed to send message: " << e.what() << std::endl;
+        return false;
+    }
+}
+

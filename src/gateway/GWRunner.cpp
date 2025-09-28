@@ -1,12 +1,14 @@
 #include "../../include/gateway/GWRunner.h"
 #include "../../include/gateway/OrdersHandler.h"
+#include "../../include/gateway/GWApplication.h"
 #include <boost/filesystem.hpp>
 #include <iostream>
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
 
-GWRunner::GWRunner(const SimpleConfig& config) : m_config(config) {
+GWRunner::GWRunner(const SimpleConfig& config, GWApplication& gwApplication)
+    : m_config(config), m_gwApplication(gwApplication) {
     setupPollers();
 }
 
@@ -51,7 +53,7 @@ void GWRunner::run() {
 
 void GWRunner::setupPollers() {
     auto refDataHolder = std::make_unique<RefDataHolder>();
-    m_ordersHandler = std::make_unique<OrdersHandler>(std::move(refDataHolder));
+    m_ordersHandler = std::make_unique<OrdersHandler>(std::move(refDataHolder), m_gwApplication);
     m_mdPoller = createPoller(m_config.getString("md_file_path"), *m_ordersHandler);
     m_gwInPoller = createPoller(m_config.getString("gw_inbound_file_path"), *m_ordersHandler);
 }

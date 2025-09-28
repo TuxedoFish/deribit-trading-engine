@@ -17,16 +17,16 @@ public:
     virtual ~SBEMessageListener() = default;
 
     // Marketdata
-    virtual void onConnectionStatus(const com::liversedge::messages::ConnectionStatus& decoder, std::uint64_t timestamp) = 0;
-    virtual void onSecurityDefinition(const com::liversedge::messages::SecurityDefinition& decoder, std::uint64_t timestamp) = 0;
-    virtual void onSecurityStatus(const com::liversedge::messages::SecurityStatus& decoder, std::uint64_t timestamp) = 0;
-    virtual void onMDFullBook(const com::liversedge::messages::MDFullBook& decoder, std::uint64_t timestamp) = 0;
-    virtual void onMDUpdate(const com::liversedge::messages::MDUpdate& decoder, std::uint64_t timestamp) = 0;
+    virtual void onConnectionStatus(com::liversedge::messages::ConnectionStatus& decoder, std::uint64_t timestamp) = 0;
+    virtual void onSecurityDefinition(com::liversedge::messages::SecurityDefinition& decoder, std::uint64_t timestamp) = 0;
+    virtual void onSecurityStatus(com::liversedge::messages::SecurityStatus& decoder, std::uint64_t timestamp) = 0;
+    virtual void onMDFullBook(com::liversedge::messages::MDFullBook& decoder, std::uint64_t timestamp) = 0;
+    virtual void onMDUpdate(com::liversedge::messages::MDUpdate& decoder, std::uint64_t timestamp) = 0;
 
     // Orders
-    virtual void onNewOrder(const com::liversedge::messages::NewOrder& decoder, std::uint64_t timestamp) = 0;
-    virtual void onCancelOrder(const com::liversedge::messages::CancelOrder& decoder, std::uint64_t timestamp) = 0;
-    virtual void onOrderCancelReject(const com::liversedge::messages::OrderCancelReject& decoder, std::uint64_t timestamp) = 0;
-    virtual void onExecutionReport(const com::liversedge::messages::ExecutionReport& decoder, std::uint64_t timestamp) = 0;
+    virtual void onNewOrder(com::liversedge::messages::NewOrder& decoder, std::uint64_t timestamp) = 0;
+    virtual void onCancelOrder(com::liversedge::messages::CancelOrder& decoder, std::uint64_t timestamp) = 0;
+    virtual void onOrderCancelReject(com::liversedge::messages::OrderCancelReject& decoder, std::uint64_t timestamp) = 0;
+    virtual void onExecutionReport(com::liversedge::messages::ExecutionReport& decoder, std::uint64_t timestamp) = 0;
 
 };

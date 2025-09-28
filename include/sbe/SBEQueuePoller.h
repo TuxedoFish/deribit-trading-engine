@@ -71,6 +71,7 @@ private:
     com::liversedge::messages::MDFullBook m_mdFullBookFlyweight;
     com::liversedge::messages::MDUpdate m_mdUpdateFlyweight;
     com::liversedge::messages::NewOrder m_newOrderFlyweight;
+    com::liversedge::messages::CancelOrder m_cancelOrderFlyweight;
 
     // Helper methods
     bool fillBuffer();

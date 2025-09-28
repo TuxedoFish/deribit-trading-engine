@@ -8,7 +8,13 @@
 #include "../../generated/com_liversedge_messages/Qty.h"
 #include "../../generated/com_liversedge_messages/Price.h"
 #include "../../generated/com_liversedge_messages/Date.h"
+#include "../../generated/com_liversedge_messages/Side.h"
+#include "../../generated/com_liversedge_messages/OrderType.h"
+#include "../../generated/com_liversedge_messages/TimeInForce.h"
 #include "../util/DecimalTypes.h"
+#include "quickfix/Fields.h"
+
+#define HEADER_LENGTH 8
 
 /**
 * Utility class for working with SBE (Simple Binary Encoding) generated types
@@ -97,7 +103,25 @@ public:
      * Extract string from VarStringEncoding field
      * @param varString The VarStringEncoding field to extract from
      */
-    static std::string extractVarString(const com::liversedge::messages::VarStringEncoding& varString);
+    static std::string extractVarString(const com::liversedge::messages::VarStringEncoding& varString, const int encodedLength, const int variableOffset = 0);
+
+    /**
+     * Convert SBE Side to FIX Side
+     * @param sbeType The SBE Side value to convert
+     */
+    static FIX::Side convertSide(const com::liversedge::messages::Side::Value& sbeType);
+
+    /**
+     * Convert SBE OrderType to FIX OrdType
+     * @param sbeType The SBE OrderType value to convert
+     */
+    static FIX::OrdType convertOrderType(const com::liversedge::messages::OrderType::Value& sbeType);
+
+    /**
+     * Convert SBE TimeInForce to FIX TimeInForce
+     * @param sbeType The SBE TimeInForce value to convert
+     */
+    static FIX::TimeInForce convertTimeInForce(const com::liversedge::messages::TimeInForce::Value& sbeType);
 
 private:
     // Private constructor - this is a utility class with only static methods

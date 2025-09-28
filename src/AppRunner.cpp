@@ -20,12 +20,12 @@ int AppRunner::runGateway()
     // Create application
     GWApplication application(config_);
 
-    // Create FIX runner and start session
+    // Create FIX runner and gateway runner (passing application reference)
     FIXRunner fixRunner(config_);
-    GWRunner gatewayRunner(config_);
+    GWRunner gatewayRunner(config_, application);
     std::string startupMessage = "Publishing inbound executions to: " + config_.getString("gw_inbound_file_path");
 
-    return fixRunner.run(application, startupMessage, [&gatewayRunner]() { gatewayRunner.run(); });
+    return fixRunner.run(application, startupMessage, [&gatewayRunner]() { gatewayRunner.run(); }, true);
 }
 
 int AppRunner::runProcessRawMarketdata() {

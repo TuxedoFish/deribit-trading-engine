@@ -2,7 +2,7 @@
 #include "../../generated/com_liversedge_messages/ActionEnum.h"
 #include <iostream>
 
-void RefDataHolder::onSecurityDefinition(const com::liversedge::messages::SecurityDefinition& decoder, std::uint64_t timestamp)
+void RefDataHolder::onSecurityDefinition(com::liversedge::messages::SecurityDefinition& decoder, std::uint64_t timestamp)
 {
     auto action = decoder.action();
     std::int32_t securityId = decoder.id();

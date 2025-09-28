@@ -11,7 +11,7 @@ public:
     RefDataHolder() = default;
 
     // Security definition processing
-    void onSecurityDefinition(const com::liversedge::messages::SecurityDefinition& decoder, std::uint64_t timestamp);
+    void onSecurityDefinition(com::liversedge::messages::SecurityDefinition& decoder, std::uint64_t timestamp);
 
     // Security lookup
     const SecurityInfo* getSecurityInfo(std::int32_t securityId) const;

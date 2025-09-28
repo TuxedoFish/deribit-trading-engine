@@ -8,6 +8,8 @@
 #include "quickfix/fix44/MarketDataRequest.h"
 #include "quickfix/fix44/MarketDataSnapshotFullRefresh.h"
 #include "quickfix/fix44/SecurityList.h"
+#include "quickfix/fix44/OrderCancelReject.h"
+#include "quickfix/fix44/ExecutionReport.h"
 #include <iostream>
 #include <chrono>
 #include <string>
@@ -36,6 +38,10 @@ public:
     void fromAdmin(const FIX::Message&, const FIX::SessionID&) noexcept;
     void fromApp(const FIX::Message&, const FIX::SessionID&) noexcept;
 
+    // Message sending interface for OrdersHandler
+    bool sendMessage(FIX::Message& message);
+    bool isLoggedOn() const { return m_loggedOn; }
+
 private:
     FIX::SessionID m_sessionID;
     bool m_loggedOn = false;
@@ -43,4 +49,6 @@ private:
 
     // Overloaded onMessage
     void onMessage(const FIX44::MarketDataRequest&, const FIX::SessionID&);
+    void onMessage(const FIX44::OrderCancelReject&, const FIX::SessionID&);
+    void onMessage(const FIX44::ExecutionReport&, const FIX::SessionID&);
 };

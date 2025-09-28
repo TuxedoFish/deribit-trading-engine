@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <cstring>
+#include <quickfix/FixValues.h>
 
 using namespace com::liversedge::messages;
 
@@ -103,16 +104,59 @@ Dec SBEUtils::convertQty(const Qty& qty)
     return value * scale;
 }
 
-std::string SBEUtils::extractVarString(const VarStringEncoding& varString)
+std::string SBEUtils::extractVarString(const VarStringEncoding& varString, const int encodedLength, const int variableOffset)
 {
     // VarStringEncoding has the length stored first, then the actual string data
     std::uint32_t stringLength = varString.length();
 
     if (stringLength > 0) {
         // The string data starts after the length field (4 bytes)
-        const char* stringStart = varString.buffer() + varString.offset() + varString.varDataEncodingOffset();
+        const char* stringStart = varString.buffer() + encodedLength + variableOffset + HEADER_LENGTH;
         return std::string(stringStart, stringLength);
-    } else {
-        return "";
+    }
+    return "";
+}
+
+FIX::Side SBEUtils::convertSide(const Side::Value& sbeType)
+{
+    switch (sbeType) {
+    case Side::BUY:
+            return FIX::Side(FIX::Side_BUY);
+        case Side::SELL:
+            return FIX::Side(FIX::Side_SELL);
+        default:
+            throw std::invalid_argument("Unknown SBE Side value");
+    }
+}
+
+FIX::OrdType SBEUtils::convertOrderType(const OrderType::Value& sbeType)
+{
+    switch (sbeType) {
+        case OrderType::MARKET:
+            return FIX::OrdType(FIX::OrdType_MARKET);
+        case OrderType::LIMIT:
+            return FIX::OrdType(FIX::OrdType_LIMIT);
+        case OrderType::STOP:
+            return FIX::OrdType(FIX::OrdType_STOP);
+        case OrderType::STOP_LIMIT:
+            return FIX::OrdType(FIX::OrdType_STOP_LIMIT);
+        default:
+            throw std::invalid_argument("Unknown SBE OrderType value");
+    }
+}
+
+FIX::TimeInForce SBEUtils::convertTimeInForce(const TimeInForce::Value& sbeType)
+{
+    switch (sbeType) {
+        case TimeInForce::IOC:
+            return FIX::TimeInForce(FIX::TimeInForce_IMMEDIATE_OR_CANCEL);
+        case TimeInForce::FOK:
+            return FIX::TimeInForce(FIX::TimeInForce_FILL_OR_KILL);
+        case TimeInForce::GTC:
+            return FIX::TimeInForce(FIX::TimeInForce_GOOD_TILL_CANCEL);
+        case TimeInForce::DAY:
+            return FIX::TimeInForce(FIX::TimeInForce_DAY);
+        default:
+            throw std::invalid_argument("Unknown SBE TimeInForce value");
     }
 }

@@ -8,7 +8,7 @@ SecurityInfo::SecurityInfo(const com::liversedge::messages::SecurityDefinition& 
 
     // Extract symbol string from variable-length field
     auto symbolField = const_cast<com::liversedge::messages::SecurityDefinition&>(secDef).symbol();
-    m_symbol = SBEUtils::extractVarString(symbolField);
+    m_symbol = SBEUtils::extractVarString(symbolField, secDef.sbeBlockLength());
 
     m_currency = secDef.currency();
     m_commCurrency = secDef.commCurrency();

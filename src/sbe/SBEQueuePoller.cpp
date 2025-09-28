@@ -42,7 +42,7 @@ void SBEQueuePoller::readFrom(const boost::filesystem::path& filePath, bool live
 bool SBEQueuePoller::next()
 {
     if (!m_isValid) {
-        throw std::runtime_error("Poller is in invalid state. Call readFrom() first.");
+        return false;
     }
 
     if (!fillBuffer()) {
@@ -121,7 +121,19 @@ bool SBEQueuePoller::next()
             m_newOrderFlyweight.wrapForDecode(m_buffer.data(), messageDataOffset,
                                    blockLength, m_messageHeader.version(), m_bufferLimit);
             m_listener.onNewOrder(m_newOrderFlyweight, timestamp);
-            actualMessageLength = m_newOrderFlyweight.encodedLength() + m_newOrderFlyweight.clientOrderId().length();
+            actualMessageLength = m_newOrderFlyweight.encodedLength()
+                + m_newOrderFlyweight.clientOrderId().length();
+            break;
+        }
+
+        case com::liversedge::messages::CancelOrder::sbeTemplateId():
+        {
+            m_cancelOrderFlyweight.wrapForDecode(m_buffer.data(), messageDataOffset,
+                                   blockLength, m_messageHeader.version(), m_bufferLimit);
+            m_listener.onCancelOrder(m_cancelOrderFlyweight, timestamp);
+            actualMessageLength = m_cancelOrderFlyweight.encodedLength()
+                + m_cancelOrderFlyweight.origClientOrderId().length()
+                + m_cancelOrderFlyweight.clientOrderId().length();
             break;
         }
 
