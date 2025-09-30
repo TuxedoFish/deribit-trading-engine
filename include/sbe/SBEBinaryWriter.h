@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <stdexcept>
+#include <mutex>
 #include <boost/filesystem.hpp>
 #include "../../generated/com_liversedge_messages/MessageHeader.h"
 #include "../../generated/com_liversedge_messages/SecurityDefinition.h"
@@ -15,6 +16,7 @@ private:
     std::string filename_;
     size_t messageCount_;
     std::vector<char> buffer_;
+    mutable std::mutex writeMutex_;
 
     static constexpr size_t BUFFER_SIZE = 4092;
 
@@ -33,13 +35,18 @@ public:
     size_t getMessageCount() const;
     const std::string& getFilename() const;
     bool isOpen() const;
-    void flush();
+
+private:
+    void flush(); // Private - called automatically by writeMessage()
 };
 
-// Generic write method that works with any SBE message type
+// Generic prepare method that works with any SBE message type - ACQUIRES LOCK
 template<typename T>
 bool SBEBinaryWriter::prepareMessage(T& message) {
     try {
+        // Acquire lock - will be held until writeMessage() completes
+        writeMutex_.lock();
+
         // Clear buffer
         std::fill(buffer_.begin(), buffer_.end(), 0);
 
@@ -59,12 +66,13 @@ bool SBEBinaryWriter::prepareMessage(T& message) {
         return true;
     }
     catch (const std::exception& e) {
-        std::cerr << "Error writing message: " << e.what() << std::endl;
+        std::cerr << "Error preparing message: " << e.what() << std::endl;
+        writeMutex_.unlock(); // Release lock on error
         return false;
     }
 }
 
-// Generic write method that works with any SBE message type
+// Generic write method that works with any SBE message type - RELEASES LOCK
 template<typename T>
 bool SBEBinaryWriter::writeMessage(T& message) {
     try {
@@ -76,6 +84,7 @@ bool SBEBinaryWriter::writeMessage(T& message) {
         if (totalSize > buffer_.size()) {
             std::cerr << "Message too large for buffer. Size: " << totalSize
                 << ", Buffer: " << buffer_.size() << std::endl;
+            writeMutex_.unlock(); // Release lock on error
             return false;
         }
 
@@ -83,15 +92,21 @@ bool SBEBinaryWriter::writeMessage(T& message) {
         file_.write(buffer_.data(), totalSize);
         if (!file_.good()) {
             std::cerr << "Error writing to file" << std::endl;
+            writeMutex_.unlock(); // Release lock on error
             return false;
         }
 
+        // Flush to disk while lock is held
+        flush();
+
         messageCount_++;
+        writeMutex_.unlock(); // Release lock on success
         return true;
 
     }
     catch (const std::exception& e) {
         std::cerr << "Error writing message: " << e.what() << std::endl;
+        writeMutex_.unlock(); // Release lock on exception
         return false;
     }
 }

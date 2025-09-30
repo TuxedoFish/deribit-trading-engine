@@ -34,12 +34,14 @@ void SBEBinaryWriter::openNewFile(const std::string& filename, bool append) {
 
 // Flush and close file
 void SBEBinaryWriter::close() {
+    writeMutex_.lock();
     if (file_.is_open()) {
         file_.flush();
         file_.close();
         std::cout << "Closed file " << filename_ << " after writing "
             << messageCount_ << " messages" << std::endl;
     }
+    writeMutex_.unlock();
 }
 
 // Get stats
@@ -49,7 +51,7 @@ const std::string& SBEBinaryWriter::getFilename() const { return filename_; }
 // Check if file is open and ready
 bool SBEBinaryWriter::isOpen() const { return file_.is_open(); }
 
-// Force flush to disk
+// Private flush to disk - called only while mutex is held
 void SBEBinaryWriter::flush() {
     if (file_.is_open()) {
         file_.flush();

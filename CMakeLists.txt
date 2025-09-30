@@ -67,6 +67,8 @@ set(GATEWAY_SOURCES
         src/gateway/RefDataHolder.cpp
         include/gateway/OrdersHandler.h
         src/gateway/OrdersHandler.cpp
+        include/gateway/DeribitMessageConverter.h
+        src/gateway/DeribitMessageConverter.cpp
 )
 
 set(UTIL_SOURCES

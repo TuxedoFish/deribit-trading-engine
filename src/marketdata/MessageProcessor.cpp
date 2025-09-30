@@ -183,8 +183,6 @@ void MessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& mes
 
     // Send out SecurityStatus - Online afterwards
     UpdateSecurityStatus(securityId, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::ONLINE);
-
-    m_writer.flush();
 }
 
 void MessageProcessor::onMessage(const FIX44::MarketDataIncrementalRefresh& message, const FIX::SessionID& sessionID)
@@ -322,10 +320,6 @@ void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::
         UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::Value::ONLINE, timestamp);
     }
 
-    if (m_shouldOutput)
-    {
-        m_writer.flush();
-    }
 }
 
 void MessageProcessor::onMessage(const FIX44::Logout& message, const FIX::SessionID& sessionID)
@@ -398,7 +392,6 @@ bool MessageProcessor::UpdateConnectionStatus(com::liversedge::messages::Connect
         return false;
     }
 
-    m_writer.flush();
 
     return true;
 }
@@ -424,7 +417,6 @@ bool MessageProcessor::RemoveSecurity(int securityId)
         return false;
     }
 
-    m_writer.flush();
 
     return true;
 }
@@ -565,7 +557,6 @@ bool MessageProcessor::ProcessMDEntry(const T& entry, int securityId, uint64_t t
         return false;
     }
 
-    m_writer.flush();
 
     return true;
 }

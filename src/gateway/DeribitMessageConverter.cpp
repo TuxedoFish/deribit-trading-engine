@@ -1,0 +1,114 @@
+#include "../../include/gateway/DeribitMessageConverter.h"
+#include "../../include/sbe/SBEUtils.h"
+#include <chrono>
+#include <iostream>
+
+void DeribitMessageConverter::convertOrderCancelReject(
+    const FIX44::OrderCancelReject& message,
+    com::liversedge::messages::OrderCancelReject& sbeReject,
+    RefDataHolder& refDataHolder
+)
+{
+    std::string clientOrderId = message.getField(FIX::FIELD::ClOrdID);
+    std::string origClientOrderId = message.getField(FIX::FIELD::OrigClOrdID);
+    std::string symbol = message.getField(FIX::FIELD::Symbol);
+
+    std::int32_t securityId = refDataHolder.getSecurityIdBySymbol(symbol);
+
+    sbeReject.timestamp(extractSendingTimeFromFix(message));
+    sbeReject.securityId(securityId);
+    SBEUtils::setVarString(sbeReject, sbeReject.clientOrderId(), clientOrderId);
+    SBEUtils::setVarString(sbeReject, sbeReject.origClientOrderId(), origClientOrderId);
+}
+
+void DeribitMessageConverter::convertExecutionReport(
+    const FIX44::ExecutionReport& message,
+    com::liversedge::messages::ExecutionReport& sbeExecReport,
+    RefDataHolder& refDataHolder
+)
+{
+    std::string origClientOrderId = message.getField(FIX::FIELD::OrigClOrdID);
+
+    if (message.isSetField(FIX::FIELD::Symbol))
+    {
+        std::string symbol = message.getField(FIX::FIELD::Symbol);
+        std::int32_t securityId = refDataHolder.getSecurityIdBySymbol(symbol);
+        sbeExecReport.securityId(securityId);
+    }
+
+    sbeExecReport.timestamp(extractSendingTimeFromFix(message));
+
+    if (message.isSetField(FIX::FIELD::TransactTime))
+    {
+        FIX::TransactTime transactTime;
+        message.getField(transactTime);
+        sbeExecReport.timestamp(transactTime.getValue().getTimeT() * 1000000000ULL);
+    }
+    FIX::OrdStatus ordStatus{};
+    message.get(ordStatus);
+    sbeExecReport.ordStatus(SBEUtils::ordStatusFromFix(ordStatus));
+    if (message.isSetField(FIX::FIELD::Side))
+    {
+        FIX::Side side{};
+        message.get(side);
+        sbeExecReport.side(SBEUtils::sideFromFix(side));
+    }
+    if (message.isSetField(FIX::FIELD::OrdRejReason))
+    {
+        FIX::OrdRejReason ordRejReason{};
+        message.get(ordRejReason);
+        sbeExecReport.ordRejReason(SBEUtils::ordRejReasonFromFix(ordRejReason));
+    }
+    if (message.isSetField(FIX::FIELD::LeavesQty)) {
+        SBEUtils::setQty(sbeExecReport.leavesQty(), message.getField(FIX::FIELD::LeavesQty));
+    }
+    if (message.isSetField(FIX::FIELD::CumQty)) {
+        SBEUtils::setQty(sbeExecReport.cumQty(), message.getField(FIX::FIELD::CumQty));
+    }
+    if (message.isSetField(FIX::FIELD::OrderQty))
+    {
+        SBEUtils::setQty(sbeExecReport.orderQty(), message.getField(FIX::FIELD::OrderQty));
+    }
+    if (message.isSetField(FIX::FIELD::Price))
+    {
+        SBEUtils::setPrice(sbeExecReport.price(), message.getField(FIX::FIELD::Price));
+    }
+    if (message.isSetField(FIX::FIELD::LastPx))
+    {
+        SBEUtils::setPrice(sbeExecReport.lastPx(), message.getField(FIX::FIELD::Price));
+    }
+    if (message.isSetField(FIX::FIELD::LastQty))
+    {
+        SBEUtils::setQty(sbeExecReport.lastQty(), message.getField(FIX::FIELD::LastQty));
+    }
+    SBEUtils::setVarString(sbeExecReport, sbeExecReport.origClientOrderId(), origClientOrderId);
+    if (message.isSetField(FIX::FIELD::ClOrdID))
+    {
+        std::string clientOrderId = message.getField(FIX::FIELD::ClOrdID);
+        SBEUtils::setVarString(sbeExecReport, sbeExecReport.clientOrderId(), clientOrderId);
+    } else
+    {
+        SBEUtils::setVarString(sbeExecReport, sbeExecReport.clientOrderId(), "");
+    }
+    if (message.isSetField(FIX::FIELD::Text))
+    {
+        SBEUtils::setVarString(sbeExecReport, sbeExecReport.text(), message.getField(FIX::FIELD::Text));
+    } else
+    {
+        SBEUtils::setVarString(sbeExecReport, sbeExecReport.text(), "");
+    }
+}
+
+std::uint64_t DeribitMessageConverter::extractSendingTimeFromFix(const FIX::Message& message)
+{
+    try {
+        FIX::SendingTime sendingTime;
+        message.getHeader().getField(sendingTime);
+        return sendingTime.getValue().getTimeT() * 1000000000ULL;
+    } catch (const std::exception& e) {
+        std::cout << "Warning: SendingTime not found in FIX message, using current time" << std::endl;
+        auto now = std::chrono::system_clock::now();
+        auto duration = now.time_since_epoch();
+        return std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
+    }
+}

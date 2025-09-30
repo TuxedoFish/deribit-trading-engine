@@ -3,8 +3,8 @@
 #include "../../include/sbe/SBEUtils.h"
 #include <iostream>
 
-OrdersHandler::OrdersHandler(RefDataHolder& refDataHolder, GWApplication& gwApplication)
-    : m_refDataHolder(refDataHolder), m_gwApplication(gwApplication)
+OrdersHandler::OrdersHandler(RefDataHolder& refDataHolder, GWApplication& gwApplication, SBEBinaryWriter& sbeWriter)
+    : m_refDataHolder(refDataHolder), m_gwApplication(gwApplication), m_sbeWriter(sbeWriter)
 {
 }
 

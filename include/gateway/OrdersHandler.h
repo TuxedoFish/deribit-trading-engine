@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "../sbe/SBEMessageListener.h"
+#include "../sbe/SBEBinaryWriter.h"
 #include "RefDataHolder.h"
 #include "quickfix/fix44/NewOrderSingle.h"
 #include "quickfix/fix44/OrderCancelRequest.h"
@@ -13,7 +14,7 @@ class GWApplication;
 class OrdersHandler : public SBEMessageListener
 {
 public:
-    explicit OrdersHandler(RefDataHolder& refDataHolder, GWApplication& gwApplication);
+    explicit OrdersHandler(RefDataHolder& refDataHolder, GWApplication& gwApplication, SBEBinaryWriter& sbeWriter);
     ~OrdersHandler() = default;
 
     // SBEMessageListener implementation
@@ -35,4 +36,5 @@ private:
     bool m_isReplay = false;
     RefDataHolder& m_refDataHolder;
     GWApplication& m_gwApplication;
+    SBEBinaryWriter& m_sbeWriter;
 };

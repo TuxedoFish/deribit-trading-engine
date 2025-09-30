@@ -26,13 +26,14 @@
 #include "../sbe/SBEBinaryWriter.h"
 #include "../sbe/SBEUtils.h"
 #include "RefDataHolder.h"
+#include "./DeribitMessageConverter.h"
 
 using encoding_t = unsigned char const*;
 
 class GWApplication : public FIX::Application, public FIX::MessageCracker
 {
 public:
-    GWApplication(SimpleConfig& config, RefDataHolder& refDataHolder);
+    GWApplication(SimpleConfig& config, RefDataHolder& refDataHolder, SBEBinaryWriter& sbeWriter);
     ~GWApplication() = default;
 
     // Application interface
@@ -53,7 +54,7 @@ private:
     bool m_loggedOn = false;
     SimpleConfig m_config;
     RefDataHolder& m_refDataHolder;
-    std::unique_ptr<SBEBinaryWriter> m_sbeWriter;
+    SBEBinaryWriter& m_sbeWriter;
 
     // Overloaded onMessage
     void onMessage(const FIX44::OrderCancelReject&, const FIX::SessionID&);
