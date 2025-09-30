@@ -4,7 +4,10 @@
 #include "quickfix/fix44/ExecutionReport.h"
 #include "../../generated/com_liversedge_messages/OrderCancelReject.h"
 #include "../../generated/com_liversedge_messages/ExecutionReport.h"
+#include "../../generated/com_liversedge_messages/CancelOrder.h"
+#include "../../generated/com_liversedge_messages/NewOrder.h"
 #include "RefDataHolder.h"
+#include "../sbe/SBEUtils.h"
 
 class DeribitMessageConverter
 {
@@ -19,6 +22,16 @@ public:
         const FIX44::ExecutionReport& fixMessage,
         com::liversedge::messages::ExecutionReport& sbeMessage,
         RefDataHolder& refDataHolder
+    );
+
+    static void createInternalOrderCancelReject(
+        com::liversedge::messages::CancelOrder& cancelOrder,
+        com::liversedge::messages::OrderCancelReject& sbeReject
+    );
+
+    static void createNewOrderReject(
+        com::liversedge::messages::NewOrder& newOrder,
+        com::liversedge::messages::ExecutionReport& sbeExecReport
     );
 
 private:

@@ -37,4 +37,7 @@ private:
     RefDataHolder& m_refDataHolder;
     GWApplication& m_gwApplication;
     SBEBinaryWriter& m_sbeWriter;
+
+    void sendCancelReject(com::liversedge::messages::CancelOrder& cancelOrder);
+    void sendNewOrderReject(com::liversedge::messages::NewOrder& newOrder);
 };

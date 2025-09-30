@@ -201,3 +201,10 @@ FIX::TimeInForce SBEUtils::convertTimeInForce(const TimeInForce::Value& sbeType)
             throw std::invalid_argument("Unknown SBE TimeInForce value");
     }
 }
+
+std::int64_t SBEUtils::getInt64(const char* buffer, std::size_t offset)
+{
+    std::int64_t value;
+    std::memcpy(&value, buffer + offset, sizeof(std::int64_t));
+    return value;
+}

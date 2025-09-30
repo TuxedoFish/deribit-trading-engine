@@ -55,6 +55,8 @@ public:
     static void setQty(com::liversedge::messages::Qty& field, const std::string& value);
     static void setPrice(com::liversedge::messages::Price& field, const std::string& value);
     static void setDate(com::liversedge::messages::Date& field, const std::string& value);
+    // Buffer access helpers
+    static std::int64_t getInt64(const char* buffer, std::size_t offset);
     // SBE -> Internal
     static Dec convertPrice(const com::liversedge::messages::Price& price);
     static Dec convertQty(const com::liversedge::messages::Qty& qty);

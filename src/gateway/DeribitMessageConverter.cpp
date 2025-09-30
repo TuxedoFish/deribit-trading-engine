@@ -11,12 +11,9 @@ void DeribitMessageConverter::convertOrderCancelReject(
 {
     std::string clientOrderId = message.getField(FIX::FIELD::ClOrdID);
     std::string origClientOrderId = message.getField(FIX::FIELD::OrigClOrdID);
-    std::string symbol = message.getField(FIX::FIELD::Symbol);
-
-    std::int32_t securityId = refDataHolder.getSecurityIdBySymbol(symbol);
 
     sbeReject.timestamp(extractSendingTimeFromFix(message));
-    sbeReject.securityId(securityId);
+    sbeReject.ordRejReason(com::liversedge::messages::OrdRejReason::UNKNOWN_ORDER);
     SBEUtils::setVarString(sbeReject, sbeReject.clientOrderId(), clientOrderId);
     SBEUtils::setVarString(sbeReject, sbeReject.origClientOrderId(), origClientOrderId);
 }
@@ -97,6 +94,49 @@ void DeribitMessageConverter::convertExecutionReport(
     {
         SBEUtils::setVarString(sbeExecReport, sbeExecReport.text(), "");
     }
+}
+
+void DeribitMessageConverter::createInternalOrderCancelReject(
+    com::liversedge::messages::CancelOrder& cancelOrder,
+    com::liversedge::messages::OrderCancelReject& sbeReject
+)
+{
+    auto now = std::chrono::system_clock::now();
+    auto duration = now.time_since_epoch();
+    std::uint64_t timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
+
+    sbeReject.timestamp(timestamp);
+    sbeReject.securityId(cancelOrder.securityId());
+    sbeReject.ordRejReason(com::liversedge::messages::OrdRejReason::CONNECTION_OFFLINE);
+
+    std::string clientOrderId = SBEUtils::extractVarString(cancelOrder.clientOrderId(), cancelOrder.sbeBlockLength());
+    std::string origClientOrderId = SBEUtils::extractVarString(cancelOrder.origClientOrderId(), cancelOrder.sbeBlockLength(), clientOrderId.length());
+
+    SBEUtils::setVarString(sbeReject, sbeReject.clientOrderId(), "");
+    SBEUtils::setVarString(sbeReject, sbeReject.origClientOrderId(), origClientOrderId);
+}
+
+void DeribitMessageConverter::createNewOrderReject(
+    com::liversedge::messages::NewOrder& newOrder,
+    com::liversedge::messages::ExecutionReport& sbeExecReport
+)
+{
+    auto now = std::chrono::system_clock::now();
+    auto duration = now.time_since_epoch();
+    std::uint64_t timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
+
+    sbeExecReport.timestamp(timestamp);
+    sbeExecReport.securityId(newOrder.securityId());
+    sbeExecReport.ordStatus(com::liversedge::messages::OrdStatus::REJECTED);
+    sbeExecReport.side(newOrder.side());
+    sbeExecReport.orderQty().mantissa(SBEUtils::getInt64(newOrder.buffer(), newOrder.quantityEncodingOffset() + HEADER_LENGTH));
+    sbeExecReport.price().mantissa(SBEUtils::getInt64(newOrder.buffer(), newOrder.priceEncodingOffset() + HEADER_LENGTH));
+    sbeExecReport.ordRejReason(com::liversedge::messages::OrdRejReason::CONNECTION_OFFLINE);
+
+    std::string clientOrderId = SBEUtils::extractVarString(newOrder.clientOrderId(), newOrder.sbeBlockLength());
+    SBEUtils::setVarString(sbeExecReport, sbeExecReport.clientOrderId(), "");
+    SBEUtils::setVarString(sbeExecReport, sbeExecReport.origClientOrderId(), clientOrderId);
+    SBEUtils::setVarString(sbeExecReport, sbeExecReport.text(), "");
 }
 
 std::uint64_t DeribitMessageConverter::extractSendingTimeFromFix(const FIX::Message& message)

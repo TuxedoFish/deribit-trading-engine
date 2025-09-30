@@ -60,6 +60,4 @@ private:
     void onMessage(const FIX44::OrderCancelReject&, const FIX::SessionID&);
     void onMessage(const FIX44::ExecutionReport&, const FIX::SessionID&);
 
-    // Helper methods
-    std::uint64_t extractSendingTimeFromFix(const FIX::Message& message) const;
 };

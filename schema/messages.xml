@@ -153,6 +153,7 @@
             <validValue name="UNKNOWN_ACCOUNT" description="Unknown account(s)">15</validValue>
             <validValue name="PRICE_EXCEEDS_PRICE_BAND" description="Price exceeds current price band">16</validValue>
             <validValue name="INVALID_PRICE_INCREMENT" description="Invalid price increment">18</validValue>
+            <validValue name="CONNECTION_OFFLINE" description="Gateway connection down (internal)">98</validValue>
             <validValue name="OTHER" description="Other">99</validValue>
         </enum>
     </types>
@@ -236,6 +237,7 @@
         <field name="securityId" id="2" type="int32" description="Internal security identifier."/>
         <field name="clientOrderId" id="3" type="VarStringEncoding" description="Client order identifier from cancel request."/>
         <field name="origClientOrderId" id="4" type="VarStringEncoding" description="Original client order identifier that failed to cancel."/>
+        <field name="ordRejReason" id="5" type="OrdRejReason" description="Order rejection reason."/>
     </sbe:message>
 
     <sbe:message name="ExecutionReport" id="108" description="Execution Report">

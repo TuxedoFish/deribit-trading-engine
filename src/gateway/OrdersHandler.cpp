@@ -1,5 +1,6 @@
 #include "../../include/gateway/OrdersHandler.h"
 #include "../../include/gateway/GWApplication.h"
+#include "../../include/gateway/DeribitMessageConverter.h"
 #include "../../include/sbe/SBEUtils.h"
 #include <iostream>
 
@@ -54,10 +55,12 @@ void OrdersHandler::onNewOrder(com::liversedge::messages::NewOrder& decoder, std
                       << " (" << secInfo->getSymbol() << ")" << std::endl;
         } else {
             std::cout << "OrdersHandler: Failed to send NewOrderSingle for " << clientOrderId << std::endl;
+            sendNewOrderReject(decoder);
         }
 
     } catch (const std::exception& e) {
         std::cout << "OrdersHandler: Error processing NewOrder: " << e.what() << std::endl;
+        sendNewOrderReject(decoder);
     }
 }
 
@@ -71,8 +74,7 @@ void OrdersHandler::onCancelOrder(com::liversedge::messages::CancelOrder& decode
     try {
         std::int32_t securityId = decoder.securityId();
         std::string clientOrderId = SBEUtils::extractVarString(decoder.clientOrderId(), decoder.sbeBlockLength());
-        // TODO: Maybe we can use this
-        // std::string origClientOrderId = SBEUtils::extractVarString(decoder.origClientOrderId(), decoder.sbeBlockLength(), clientOrderId.length());
+        std::string origClientOrderId = SBEUtils::extractVarString(decoder.origClientOrderId(), decoder.sbeBlockLength(), clientOrderId.length());
 
         const SecurityInfo* secInfo = m_refDataHolder.getSecurityInfo(securityId);
         if (!secInfo) {
@@ -82,20 +84,38 @@ void OrdersHandler::onCancelOrder(com::liversedge::messages::CancelOrder& decode
 
         FIX44::OrderCancelRequest cancelRequest;
 
-        cancelRequest.setField(FIX::ClOrdID(clientOrderId));
-        // TODO: Only required if we dont set client order id
-        // cancelRequest.setField(FIX::OrigClOrdID(origClientOrderId));
+        cancelRequest.setField(FIX::ClOrdID(origClientOrderId));
         cancelRequest.setField(FIX::Symbol(secInfo->getSymbol()));
 
         if (m_gwApplication.sendMessage(cancelRequest)) {
-            std::cout << "OrdersHandler: Sent OrderCancelRequest for " << clientOrderId
+            std::cout << "OrdersHandler: Sent OrderCancelRequest for " << origClientOrderId
                       << " (" << secInfo->getSymbol() << ")" << std::endl;
         } else {
-            std::cout << "OrdersHandler: Failed to send OrderCancelRequest for " << clientOrderId << std::endl;
+            std::cout << "OrdersHandler: Failed to send OrderCancelRequest for " << origClientOrderId << std::endl;
+            sendCancelReject(decoder);
         }
 
     } catch (const std::exception& e) {
         std::cout << "OrdersHandler: Error processing CancelOrder: " << e.what() << std::endl;
+        sendCancelReject(decoder);
+    }
+}
+
+void OrdersHandler::sendCancelReject(com::liversedge::messages::CancelOrder& cancelOrder)
+{
+    com::liversedge::messages::OrderCancelReject sbeReject;
+    if (m_sbeWriter.prepareMessage(sbeReject)) {
+        DeribitMessageConverter::createInternalOrderCancelReject(cancelOrder, sbeReject);
+        m_sbeWriter.writeMessage(sbeReject);
+    }
+}
+
+void OrdersHandler::sendNewOrderReject(com::liversedge::messages::NewOrder& newOrder)
+{
+    com::liversedge::messages::ExecutionReport sbeExecReport;
+    if (m_sbeWriter.prepareMessage(sbeExecReport)) {
+        DeribitMessageConverter::createNewOrderReject(newOrder, sbeExecReport);
+        m_sbeWriter.writeMessage(sbeExecReport);
     }
 }
 
