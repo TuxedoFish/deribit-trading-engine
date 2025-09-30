@@ -71,7 +71,8 @@ void OrdersHandler::onCancelOrder(com::liversedge::messages::CancelOrder& decode
     try {
         std::int32_t securityId = decoder.securityId();
         std::string clientOrderId = SBEUtils::extractVarString(decoder.clientOrderId(), decoder.sbeBlockLength());
-        std::string origClientOrderId = SBEUtils::extractVarString(decoder.origClientOrderId(), decoder.sbeBlockLength(), clientOrderId.length());
+        // TODO: Maybe we can use this
+        // std::string origClientOrderId = SBEUtils::extractVarString(decoder.origClientOrderId(), decoder.sbeBlockLength(), clientOrderId.length());
 
         const SecurityInfo* secInfo = m_refDataHolder.getSecurityInfo(securityId);
         if (!secInfo) {
@@ -82,14 +83,15 @@ void OrdersHandler::onCancelOrder(com::liversedge::messages::CancelOrder& decode
         FIX44::OrderCancelRequest cancelRequest;
 
         cancelRequest.setField(FIX::ClOrdID(clientOrderId));
-        cancelRequest.setField(FIX::OrigClOrdID(origClientOrderId));
+        // TODO: Only required if we dont set client order id
+        // cancelRequest.setField(FIX::OrigClOrdID(origClientOrderId));
         cancelRequest.setField(FIX::Symbol(secInfo->getSymbol()));
 
         if (m_gwApplication.sendMessage(cancelRequest)) {
-            std::cout << "OrdersHandler: Sent OrderCancelRequest for " << origClientOrderId
+            std::cout << "OrdersHandler: Sent OrderCancelRequest for " << clientOrderId
                       << " (" << secInfo->getSymbol() << ")" << std::endl;
         } else {
-            std::cout << "OrdersHandler: Failed to send OrderCancelRequest for " << origClientOrderId << std::endl;
+            std::cout << "OrdersHandler: Failed to send OrderCancelRequest for " << clientOrderId << std::endl;
         }
 
     } catch (const std::exception& e) {

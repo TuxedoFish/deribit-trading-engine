@@ -1,7 +1,6 @@
 ## Getting started
 
-- Install boost-iostreeams, openssl, quickfix using vcpkg
-- Build the project in VSCODE / CLion
+- Dependencies: boost-iostreeams, openssl, quickfix using vcpkg
 
 ## Apps
 
@@ -29,10 +28,11 @@
 ## Notes
 
 ### SBE schema
-- Generate SBE manually using sbe-tool
+- Note: this runs as part of the build process.
+- If needed use this command to generate SBE manually using sbe-tool
   - `java -Dsbe.target.language=CPP -Dsbe.output.dir=generated -jar env/sbe-all-1.30.0.jar schema/messages.xml`
   
 ### Package patches
 - Issue with vcpkg auto generated patch to remove throws 
-- /home/markl/.vcpkg-clion/vcpkg/ports/quickfix/00001-fix-build.patch
+- .vcpkg-clion/vcpkg/ports/quickfix/00001-fix-build.patch
 - #define QUICKFIX_THROW(...) throw(__VA_ARGS__) 

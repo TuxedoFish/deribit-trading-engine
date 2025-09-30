@@ -34,9 +34,15 @@ int main(int argc, char* argv[])
         // AppRunner app(config);
         // return app.runMarketdata();
     }
-    if (applicationName.rfind("md-prod", 0) == 0) {
+    if (applicationName == "md-prod") {
         std::cout << "Running as: " << applicationName << std::endl;
         SimpleConfig config("config/settings.md-prod.txt");
+        AppRunner app(config);
+        return app.runMarketdata();
+    }
+    if (applicationName.rfind("md-prod-to-testnet", 0) == 0) {
+        std::cout << "Running as: " << applicationName << std::endl;
+        SimpleConfig config("config/settings.md-prod-to-testnet.txt");
         AppRunner app(config);
         return app.runMarketdata();
     }

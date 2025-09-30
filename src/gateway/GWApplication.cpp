@@ -81,39 +81,59 @@ void GWApplication::onMessage(const FIX44::OrderCancelReject& message, const FIX
     }
 }
 
-void GWApplication::onMessage(const FIX44::ExecutionReport& message, const FIX::SessionID& sessionID) {
+void GWApplication::onMessage(const FIX44::ExecutionReport& message, const FIX::SessionID& sessionID)
+{
     FixUtils::logFixMessage("Received ExecutionReport: ", message);
 
     // Convert FIX ExecutionReport to SBE and write to outbound file
     com::liversedge::messages::ExecutionReport sbeExecReport;
-    if (m_sbeWriter->prepareMessage(sbeExecReport)) {
+    if (m_sbeWriter->prepareMessage(sbeExecReport))
+    {
         // Extract fields from FIX message
-        std::string clientOrderId = message.getField(FIX::FIELD::ClOrdID);
         std::string origClientOrderId = message.getField(FIX::FIELD::OrigClOrdID);
-        std::string symbol = message.getField(FIX::FIELD::Symbol);
 
-        // Map symbol to security ID
-        std::int32_t securityId = m_refDataHolder.getSecurityIdBySymbol(symbol);
+        if (message.isSetField(FIX::FIELD::Symbol))
+        {
+            std::string symbol = message.getField(FIX::FIELD::Symbol);
+            // Map symbol to security ID
+            std::int32_t securityId = m_refDataHolder.getSecurityIdBySymbol(symbol);
+            sbeExecReport.securityId(securityId);
+        }
 
         // Set SBE fields
         sbeExecReport.timestamp(extractSendingTimeFromFix(message));
-        FIX::TransactTime transactTime;
-        message.getField(transactTime);
-        sbeExecReport.timestamp(transactTime.getValue().getTimeT() * 1000000000ULL);
-        sbeExecReport.securityId(securityId);
+
+        if (message.isSetField(FIX::FIELD::TransactTime))
+        {
+            FIX::TransactTime transactTime;
+            message.getField(transactTime);
+            sbeExecReport.timestamp(transactTime.getValue().getTimeT() * 1000000000ULL);
+        }
         FIX::OrdStatus ordStatus{};
         message.get(ordStatus);
         sbeExecReport.ordStatus(SBEUtils::ordStatusFromFix(ordStatus));
-        FIX::Side side{};
-        message.get(side);
-        sbeExecReport.side(SBEUtils::sideFromFix(side));
-        FIX::OrdRejReason ordRejReason{};
-        message.get(ordRejReason);
-        sbeExecReport.ordRejReason(SBEUtils::ordRejReasonFromFix(ordRejReason));
-        sbeExecReport.securityId(securityId);
-        SBEUtils::setQty(sbeExecReport.leavesQty(), message.getField(FIX::FIELD::LeavesQty));
-        SBEUtils::setQty(sbeExecReport.cumQty(), message.getField(FIX::FIELD::CumQty));
-        SBEUtils::setQty(sbeExecReport.orderQty(), message.getField(FIX::FIELD::OrderQty));
+        if (message.isSetField(FIX::FIELD::Side))
+        {
+            FIX::Side side{};
+            message.get(side);
+            sbeExecReport.side(SBEUtils::sideFromFix(side));
+        }
+        if (message.isSetField(FIX::FIELD::OrdRejReason))
+        {
+            FIX::OrdRejReason ordRejReason{};
+            message.get(ordRejReason);
+            sbeExecReport.ordRejReason(SBEUtils::ordRejReasonFromFix(ordRejReason));
+        }
+        if (message.isSetField(FIX::FIELD::LeavesQty)) {
+            SBEUtils::setQty(sbeExecReport.leavesQty(), message.getField(FIX::FIELD::LeavesQty));
+        }
+        if (message.isSetField(FIX::FIELD::CumQty)) {
+            SBEUtils::setQty(sbeExecReport.cumQty(), message.getField(FIX::FIELD::CumQty));
+        }
+        if (message.isSetField(FIX::FIELD::OrderQty))
+        {
+            SBEUtils::setQty(sbeExecReport.orderQty(), message.getField(FIX::FIELD::OrderQty));
+        }
         if (message.isSetField(FIX::FIELD::Price))
         {
             SBEUtils::setPrice(sbeExecReport.price(), message.getField(FIX::FIELD::Price));
@@ -127,7 +147,14 @@ void GWApplication::onMessage(const FIX44::ExecutionReport& message, const FIX::
             SBEUtils::setQty(sbeExecReport.lastQty(), message.getField(FIX::FIELD::LastQty));
         }
         SBEUtils::setVarString(sbeExecReport, sbeExecReport.origClientOrderId(), origClientOrderId);
-        SBEUtils::setVarString(sbeExecReport, sbeExecReport.clientOrderId(), clientOrderId);
+        if (message.isSetField(FIX::FIELD::ClOrdID))
+        {
+            std::string clientOrderId = message.getField(FIX::FIELD::ClOrdID);
+            SBEUtils::setVarString(sbeExecReport, sbeExecReport.clientOrderId(), clientOrderId);
+        } else
+        {
+            SBEUtils::setVarString(sbeExecReport, sbeExecReport.clientOrderId(), "");
+        }
         if (message.isSetField(FIX::FIELD::Text))
         {
             SBEUtils::setVarString(sbeExecReport, sbeExecReport.text(), message.getField(FIX::FIELD::Text));
