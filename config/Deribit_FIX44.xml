@@ -105,8 +105,8 @@
       <field name="TotNumReports" required="N"/>
     </message>
     <message name='OrderCancelReject' msgtype='9' msgcat='app'>
-      <field name='ClOrdID' required='Y' />
-      <field name='OrigClOrdID' required='Y' />
+      <field name='ClOrdID' required='N' />
+      <field name='OrigClOrdID' required='N' />
       <field name='OrdStatus' required='N' />
       <field name='Text' required='N' />
       <field name='LeavesQty' required='N' />
