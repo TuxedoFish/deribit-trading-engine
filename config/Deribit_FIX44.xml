@@ -2087,7 +2087,7 @@
       <value enum='e' description='WORK_TO_TARGET_STRATEGY' />
       <!-- quickfix validation does not handle multiple value strings correctly, so we
            have to add this combination manually -->
-      <value enum='6 A' description='PARTICIPATE_DONT_INITIATE_NO_CROSS' />
+      <value enum='6A' description='PARTICIPATE_DONT_INITIATE_NO_CROSS' />
     </field>
     <field number='19' name='ExecRefID' type='STRING' />
     <field number='21' name='HandlInst' type='CHAR'>

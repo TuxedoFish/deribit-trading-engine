@@ -4,6 +4,8 @@
 #include "../../include/sbe/SBEUtils.h"
 #include <iostream>
 
+#include "../../include/fix/FIXCustomTags.h"
+
 OrdersHandler::OrdersHandler(RefDataHolder& refDataHolder, GWApplication& gwApplication, SBEBinaryWriter& sbeWriter)
     : m_refDataHolder(refDataHolder), m_gwApplication(gwApplication), m_sbeWriter(sbeWriter)
 {
@@ -44,6 +46,10 @@ void OrdersHandler::onNewOrder(com::liversedge::messages::NewOrder& decoder, std
         newOrderSingle.setField(FIX::OrderQty(quantity.convert_to<double>()));
         newOrderSingle.setField(SBEUtils::convertOrderType(orderType));
 
+        if (orderType == com::liversedge::messages::OrderType::LIMIT) {
+            // Always set post only flags
+            newOrderSingle.setField(FIX::ExecInst(FIXCustomTags::ExecInst_PARTICIPATE_DONT_INITIATE_NO_CROSS));
+        }
         if (orderType != com::liversedge::messages::OrderType::MARKET) {
             newOrderSingle.setField(FIX::Price(price.convert_to<double>()));
         }

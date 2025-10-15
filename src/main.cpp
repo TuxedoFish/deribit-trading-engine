@@ -28,11 +28,10 @@ int main(int argc, char* argv[])
         return app.runGateway();
     }
     if (applicationName.rfind("gw-prod", 0) == 0) {
-        // TODO: Not safe to trial this
-        // std::cout << "Running as: " << applicationName << std::endl;
-        // SimpleConfig config("config/settings.gw-prod.txt");
-        // AppRunner app(config);
-        // return app.runMarketdata();
+        std::cout << "Running as: " << applicationName << std::endl;
+        SimpleConfig config("config/settings.gw-prod.txt");
+        AppRunner app(config);
+        return app.runGateway();
     }
     if (applicationName == "md-prod") {
         std::cout << "Running as: " << applicationName << std::endl;

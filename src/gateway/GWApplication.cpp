@@ -59,6 +59,7 @@ void GWApplication::onMessage(const FIX44::OrderCancelReject& message, const FIX
     if (m_sbeWriter.prepareMessage(sbeReject)) {
         DeribitMessageConverter::convertOrderCancelReject(message, sbeReject, m_refDataHolder);
         m_sbeWriter.writeMessage(sbeReject);
+        std::cout << "Sent SBE: " << sbeReject << std::endl;
     }
 }
 
@@ -71,6 +72,7 @@ void GWApplication::onMessage(const FIX44::ExecutionReport& message, const FIX::
     {
         DeribitMessageConverter::convertExecutionReport(message, sbeExecReport, m_refDataHolder);
         m_sbeWriter.writeMessage(sbeExecReport);
+        std::cout << "Sent SBE: " << sbeExecReport << std::endl;
     }
 }
 
