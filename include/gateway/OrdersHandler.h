@@ -6,7 +6,13 @@
 #include "RefDataHolder.h"
 #include "quickfix/fix44/NewOrderSingle.h"
 #include "quickfix/fix44/OrderCancelRequest.h"
+#include "quickfix/fix44/OrderCancelReplaceRequest.h"
 #include "quickfix/Fields.h"
+#include "../../include/gateway/GWApplication.h"
+#include "../../include/gateway/DeribitMessageConverter.h"
+#include "../../include/sbe/SBEUtils.h"
+#include "../../include/fix/FIXCustomTags.h"
+#include <iostream>
 
 // Forward declaration to avoid circular dependency
 class GWApplication;
@@ -24,6 +30,7 @@ public:
     void onMDUpdate(com::liversedge::messages::MDUpdate& decoder, std::uint64_t timestamp) override {}
     void onMDFullBook(com::liversedge::messages::MDFullBook& decoder, std::uint64_t timestamp) override {}
     void onNewOrder(com::liversedge::messages::NewOrder& decoder, std::uint64_t timestamp) override;
+    void onAmendOrder(com::liversedge::messages::AmendOrder& decoder, std::uint64_t timestamp) override;
     void onCancelOrder(com::liversedge::messages::CancelOrder& decoder, std::uint64_t timestamp) override;
     void onOrderCancelReject(com::liversedge::messages::OrderCancelReject& decoder, std::uint64_t timestamp) override {}
     void onExecutionReport(com::liversedge::messages::ExecutionReport& decoder, std::uint64_t timestamp) override {}

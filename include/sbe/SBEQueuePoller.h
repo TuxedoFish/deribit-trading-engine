@@ -18,6 +18,7 @@
 #include "../../generated/com_liversedge_messages/MDFullBook.h"
 #include "../../generated/com_liversedge_messages/MDUpdate.h"
 #include "../../generated/com_liversedge_messages/NewOrder.h"
+#include "../../generated/com_liversedge_messages/AmendOrder.h"
 
 class SBEQueuePoller
 {
@@ -72,6 +73,7 @@ private:
     com::liversedge::messages::MDFullBook m_mdFullBookFlyweight;
     com::liversedge::messages::MDUpdate m_mdUpdateFlyweight;
     com::liversedge::messages::NewOrder m_newOrderFlyweight;
+    com::liversedge::messages::AmendOrder m_amendOrderFlyweight;
     com::liversedge::messages::CancelOrder m_cancelOrderFlyweight;
 
     // Helper methods

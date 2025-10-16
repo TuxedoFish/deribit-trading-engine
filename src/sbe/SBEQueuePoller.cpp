@@ -145,6 +145,16 @@ bool SBEQueuePoller::next()
             break;
         }
 
+        case com::liversedge::messages::AmendOrder::sbeTemplateId():
+        {
+            m_amendOrderFlyweight.wrapForDecode(m_buffer.data(), messageDataOffset,
+                                   blockLength, m_messageHeader.version(), m_bufferLimit);
+            m_listener.onAmendOrder(m_amendOrderFlyweight, timestamp);
+            actualMessageLength = m_amendOrderFlyweight.encodedLength()
+                + m_amendOrderFlyweight.clientOrderId().length();
+            break;
+        }
+
         default:
             // Unknown message type - skip using block length
             actualMessageLength = blockLength;

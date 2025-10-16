@@ -1,10 +1,4 @@
 #include "../../include/gateway/OrdersHandler.h"
-#include "../../include/gateway/GWApplication.h"
-#include "../../include/gateway/DeribitMessageConverter.h"
-#include "../../include/sbe/SBEUtils.h"
-#include <iostream>
-
-#include "../../include/fix/FIXCustomTags.h"
 
 OrdersHandler::OrdersHandler(RefDataHolder& refDataHolder, GWApplication& gwApplication, SBEBinaryWriter& sbeWriter)
     : m_refDataHolder(refDataHolder), m_gwApplication(gwApplication), m_sbeWriter(sbeWriter)
@@ -67,6 +61,62 @@ void OrdersHandler::onNewOrder(com::liversedge::messages::NewOrder& decoder, std
     } catch (const std::exception& e) {
         std::cout << "OrdersHandler: Error processing NewOrder: " << e.what() << std::endl;
         sendNewOrderReject(decoder);
+    }
+}
+
+void OrdersHandler::onAmendOrder(com::liversedge::messages::AmendOrder& decoder, std::uint64_t timestamp)
+{
+    if (m_isReplay)
+    {
+        return;
+    }
+
+    try {
+        std::int32_t securityId = decoder.securityId();
+        auto side = decoder.side();
+        auto orderType = decoder.orderType();
+        auto timeInForce = decoder.timeInForce();
+        auto price = SBEUtils::convertPrice(decoder.price());
+        auto quantity = SBEUtils::convertQty(decoder.quantity());
+        std::string clientOrderId = SBEUtils::extractVarString(decoder.clientOrderId(), decoder.sbeBlockLength());
+
+        const SecurityInfo* secInfo = m_refDataHolder.getSecurityInfo(securityId);
+        if (!secInfo) {
+            std::cout << "OrdersHandler: Security not found for ID: " << securityId << std::endl;
+            return;
+        }
+
+        FIX44::OrderCancelReplaceRequest orderCancelReplaceRequest;
+
+        orderCancelReplaceRequest.setField(FIX::ClOrdID(clientOrderId));
+        orderCancelReplaceRequest.setField(FIX::Symbol(secInfo->getSymbol()));
+        orderCancelReplaceRequest.setField(SBEUtils::convertSide(side));
+        orderCancelReplaceRequest.setField(FIX::OrderQty(quantity.convert_to<double>()));
+        orderCancelReplaceRequest.setField(SBEUtils::convertOrderType(orderType));
+
+        if (orderType == com::liversedge::messages::OrderType::LIMIT) {
+            // Always set post only flags
+            orderCancelReplaceRequest.setField(FIX::ExecInst(FIXCustomTags::ExecInst_PARTICIPATE_DONT_INITIATE_NO_CROSS));
+        }
+        if (orderType != com::liversedge::messages::OrderType::MARKET) {
+            orderCancelReplaceRequest.setField(FIX::Price(price.convert_to<double>()));
+        }
+
+        orderCancelReplaceRequest.setField(SBEUtils::convertTimeInForce(timeInForce));
+
+        if (m_gwApplication.sendMessage(orderCancelReplaceRequest)) {
+            std::cout << "OrdersHandler: Sent OrderCancelReplaceRequest for " << clientOrderId
+                      << " (" << secInfo->getSymbol() << ")" << std::endl;
+        } else {
+            std::cout << "OrdersHandler: Failed to send NewOrderSingle for " << clientOrderId << std::endl;
+            // TODO Handle internal reject
+            // sendCancelReject(decoder);
+        }
+
+    } catch (const std::exception& e) {
+        std::cout << "OrdersHandler: Error processing AmendOrder: " << e.what() << std::endl;
+        // TODO Handle internal reject
+        // sendCancelReject(decoder);
     }
 }
 

@@ -132,6 +132,7 @@
             <validValue name="FILLED" description="Order completely filled">2</validValue>
             <validValue name="CANCELLED" description="Order cancelled">3</validValue>
             <validValue name="REJECTED" description="Order rejected">4</validValue>
+            <validValue name="REPLACED" description="Order replaced">5</validValue>
         </enum>
 
         <enum name="OrdRejReason" encodingType="uint8">
@@ -257,6 +258,18 @@
         <field name="lastPx" id="13" type="Price" presence="optional" description="Last fill price."/>
         <field name="lastQty" id="14" type="Qty" presence="optional" description="Last fill quantity."/>
         <field name="text" id="15" type="VarStringEncoding" description="Free format text."/>
+    </sbe:message>
+
+    <sbe:message name="AmendOrder" id="109" description="Order Amend Request">
+        <field name="timestamp" id="1" type="uint64" description="Timestamp in nanoseconds."/>
+        <field name="securityId" id="2" type="int32" description="Internal security identifier."/>
+        <field name="side" id="3" type="Side" description="Order side (buy/sell)."/>
+        <field name="orderType" id="4" type="OrderType" description="Order type."/>
+        <field name="timeInForce" id="5" type="TimeInForce" description="Time in force."/>
+        <field name="price" id="6" type="Price" description="Order price."/>
+        <field name="quantity" id="7" type="Qty" description="Order quantity."/>
+        <field name="isPostOnly" id="8" type="uint8" description="Post-only flag (0=false, 1=true)."/>
+        <field name="clientOrderId" id="9" type="VarStringEncoding" description="Client-assigned order identifier."/>
     </sbe:message>
 
 </sbe:messageSchema>

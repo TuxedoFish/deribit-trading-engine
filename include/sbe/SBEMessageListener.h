@@ -10,6 +10,7 @@
 #include "../../generated/com_liversedge_messages/CancelOrder.h"
 #include "../../generated/com_liversedge_messages/OrderCancelReject.h"
 #include "../../generated/com_liversedge_messages/ExecutionReport.h"
+#include "com_liversedge_messages/AmendOrder.h"
 
 class SBEMessageListener
 {
@@ -25,6 +26,7 @@ public:
 
     // Orders
     virtual void onNewOrder(com::liversedge::messages::NewOrder& decoder, std::uint64_t timestamp) = 0;
+    virtual void onAmendOrder(com::liversedge::messages::AmendOrder& decoder, std::uint64_t timestamp) = 0;
     virtual void onCancelOrder(com::liversedge::messages::CancelOrder& decoder, std::uint64_t timestamp) = 0;
     virtual void onOrderCancelReject(com::liversedge::messages::OrderCancelReject& decoder, std::uint64_t timestamp) = 0;
     virtual void onExecutionReport(com::liversedge::messages::ExecutionReport& decoder, std::uint64_t timestamp) = 0;

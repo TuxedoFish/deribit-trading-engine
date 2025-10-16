@@ -108,8 +108,11 @@ OrdStatus::Value SBEUtils::ordStatusFromFix(FIX::OrdStatus ordStatus)
     } else if (ordStatus == FIX::OrdStatus_REJECTED)
     {
         return OrdStatus::Value::REJECTED;
+    } else if (ordStatus == FIX::OrdStatus_REPLACED)
+    {
+        return OrdStatus::Value::REPLACED;
     }
-    return OrdStatus::Value::NULL_VALUE;
+return OrdStatus::Value::NULL_VALUE;
 }
 
 Side::Value SBEUtils::sideFromFix(FIX::Side side)
