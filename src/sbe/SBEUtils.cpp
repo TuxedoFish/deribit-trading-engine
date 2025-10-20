@@ -84,13 +84,22 @@ SecurityType::Value SBEUtils::securityTypeFromString(const std::string& security
     return SecurityType::NULL_VALUE;
 }
 
-OrdRejReason::Value SBEUtils::ordRejReasonFromFix(FIX::OrdRejReason ordRejReason)
+OrdRejReason::Value SBEUtils::ordRejReasonFromFix(const FIX::OrdRejReason& ordRejReason)
 {
     // TODO: Implement
     return OrdRejReason::Value::OTHER;
 }
 
-OrdStatus::Value SBEUtils::ordStatusFromFix(FIX::OrdStatus ordStatus)
+OrderType::Value SBEUtils::ordTypeFromFix(FIX::OrdType ordType)
+{
+    if (ordType == FIX::OrdType_MARKET)
+    {
+        return OrderType::MARKET;
+    }
+    return OrderType::LIMIT;
+}
+
+OrdStatus::Value SBEUtils::ordStatusFromFix(const FIX::OrdStatus& ordStatus)
 {
     if (ordStatus == FIX::OrdStatus_NEW)
     {
@@ -115,7 +124,7 @@ OrdStatus::Value SBEUtils::ordStatusFromFix(FIX::OrdStatus ordStatus)
 return OrdStatus::Value::NULL_VALUE;
 }
 
-Side::Value SBEUtils::sideFromFix(FIX::Side side)
+Side::Value SBEUtils::sideFromFix(const FIX::Side side)
 {
     if (side == FIX::Side_BUY)
     {

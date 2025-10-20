@@ -65,9 +65,10 @@ public:
     static com::liversedge::messages::Currency::Value currencyFromString(const std::string& currency);
     static com::liversedge::messages::SettlType::Value settlTypeFromString(const std::string& settlType);
     static com::liversedge::messages::SecurityType::Value securityTypeFromString(const std::string& securityType);
-    static com::liversedge::messages::OrdStatus::Value ordStatusFromFix(FIX::OrdStatus ordStatus);
+    static com::liversedge::messages::OrdStatus::Value ordStatusFromFix(const FIX::OrdStatus& ordStatus);
     static com::liversedge::messages::Side::Value sideFromFix(FIX::Side side);
-    static com::liversedge::messages::OrdRejReason::Value ordRejReasonFromFix(FIX::OrdRejReason ordRejReason);
+    static com::liversedge::messages::OrdRejReason::Value ordRejReasonFromFix(const FIX::OrdRejReason& ordRejReason);
+    static com::liversedge::messages::OrderType::Value ordTypeFromFix(FIX::OrdType ordType);
     // SBE -> FIX
     static FIX::Side convertSide(const com::liversedge::messages::Side::Value& sbeType);
     static FIX::OrdType convertOrderType(const com::liversedge::messages::OrderType::Value& sbeType);

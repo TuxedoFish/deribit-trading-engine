@@ -73,6 +73,15 @@ void DeribitMessageConverter::convertExecutionReport(
         message.get(side);
         sbeExecReport.side(SBEUtils::sideFromFix(side));
     }
+    if (message.isSetField(FIX::FIELD::OrdType))
+    {
+        FIX::OrdType ordType{};
+        message.get(ordType);
+        sbeExecReport.orderType(SBEUtils::ordTypeFromFix(ordType));
+    } else
+    {
+        sbeExecReport.orderType(com::liversedge::messages::OrderType::LIMIT);
+    }
     if (message.isSetField(FIX::FIELD::OrdRejReason))
     {
         FIX::OrdRejReason ordRejReason{};

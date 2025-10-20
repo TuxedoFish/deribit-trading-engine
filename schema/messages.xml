@@ -258,6 +258,7 @@
         <field name="lastPx" id="13" type="Price" presence="optional" description="Last fill price."/>
         <field name="lastQty" id="14" type="Qty" presence="optional" description="Last fill quantity."/>
         <field name="text" id="15" type="VarStringEncoding" description="Free format text."/>
+        <field name="orderType" id="16" type="OrderType" description="Order type."/>
     </sbe:message>
 
     <sbe:message name="AmendOrder" id="109" description="Order Amend Request">
