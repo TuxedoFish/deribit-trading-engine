@@ -128,63 +128,63 @@ int MarketdataHistoricalRunner::run() {
     MessageProcessor processor{ writer };
     FileMessageProcessor historicalProcessor{ dataDictionaryLoc, processor, writer };
 
-    // Check for previous day file and prime state if needed
-    tm previousDate = startDate;
-    previousDate.tm_mday -= 1;
+    if (!config_.getBool("from_start"))
+    {
+        // TODO: Handle month/year rollover properly
+        // Check for previous day file and prime state if needed
+        tm previousDate = startDate;
+        previousDate.tm_mday -= 1;
+        std::string previousFilePath = findValidFilePath(rawFixCapturesLoc, previousDate);
+        if (!previousFilePath.empty() && boost::filesystem::exists(previousFilePath)) {
+            std::cout << "Found previous day file: " << previousFilePath << ", priming state..." << std::endl;
 
-    // TODO: Handle month/year rollover properly
+            // Disable output while priming state
+            processor.setShouldOutput(false);
 
-    std::string previousFilePath = findValidFilePath(rawFixCapturesLoc, previousDate);
+            // Read file backwards to find last logon
+            boost::iostreams::mapped_file_source previousFile(previousFilePath);
+            const char* data = previousFile.data();
+            const char* end = data + previousFile.size();
 
-    if (!previousFilePath.empty() && boost::filesystem::exists(previousFilePath)) {
-        std::cout << "Found previous day file: " << previousFilePath << ", priming state..." << std::endl;
+            // Find lines in reverse order
+            const char* lineEnd = end;
+            bool foundLogon = false;
+            size_t linesToReplay = 0;
+            const char* replayFrom;
 
-        // Disable output while priming state
-        processor.setShouldOutput(false);
-
-        // Read file backwards to find last logon
-        boost::iostreams::mapped_file_source previousFile(previousFilePath);
-        const char* data = previousFile.data();
-        const char* end = data + previousFile.size();
-
-        // Find lines in reverse order
-        const char* lineEnd = end;
-        bool foundLogon = false;
-        size_t linesToReplay = 0;
-        const char* replayFrom;
-
-        // Go backwards through the file to collect all lines
-        for (const char* pos = end - 1; pos >= data; --pos) {
-            if (*pos == '\n' || pos == data) {
-                const char* lineStart = (pos == data) ? pos : pos + 1;
-                if (lineEnd > lineStart) {
-                    const char* pipePos = std::find(lineStart, lineEnd, '|');
-                    if (pipePos != lineEnd) {
-                        // Extract message part after pipe
-                        std::string msgStr = getStringSafe(pipePos + 1, lineEnd - pipePos - 1);
-                        linesToReplay++;
-                        if (!msgStr.empty() & FileMessageProcessor::isLogon(msgStr)) {
-                            replayFrom = lineStart;
-                            foundLogon = true;
-                            break;
+            // Go backwards through the file to collect all lines
+            for (const char* pos = end - 1; pos >= data; --pos) {
+                if (*pos == '\n' || pos == data) {
+                    const char* lineStart = (pos == data) ? pos : pos + 1;
+                    if (lineEnd > lineStart) {
+                        const char* pipePos = std::find(lineStart, lineEnd, '|');
+                        if (pipePos != lineEnd) {
+                            // Extract message part after pipe
+                            std::string msgStr = getStringSafe(pipePos + 1, lineEnd - pipePos - 1);
+                            linesToReplay++;
+                            if (!msgStr.empty() & FileMessageProcessor::isLogon(msgStr)) {
+                                replayFrom = lineStart;
+                                foundLogon = true;
+                                break;
+                            }
                         }
                     }
+                    lineEnd = pos;
                 }
-                lineEnd = pos;
             }
-        }
 
-        if (foundLogon) {
-            readFrom(replayFrom, end, historicalProcessor, linesToReplay);
+            if (foundLogon) {
+                readFrom(replayFrom, end, historicalProcessor, linesToReplay);
+            } else {
+                std::cerr << "No logon message found in previous day file" << std::endl;
+                return 0;
+            }
+
+            previousFile.close();
         } else {
-            std::cerr << "No logon message found in previous day file" << std::endl;
+            std::cerr << "No previous day file found (" << previousFilePath << "), exiting early" << std::endl;
             return 0;
         }
-
-        previousFile.close();
-    } else {
-        std::cerr << "No previous day file found (" << previousFilePath << "), exiting early" << std::endl;
-        return 0;
     }
 
     // Main app loop

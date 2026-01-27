@@ -1,5 +1,7 @@
 #include "../../include/marketdata/MDApplicationBase.h"
 
+#include "../../include/fix/FIXCustomTags.h"
+
 void MDApplicationBase::onCreate(const FIX::SessionID& sessionID)
 {
     std::cout << "Session created: " << sessionID << std::endl;
@@ -91,6 +93,10 @@ void MDApplicationBase::subscribe(std::string symbols[], int nSymbols)
     // Set group counts BEFORE adding groups
     mdRequest.set(FIX::NoMDEntryTypes(3));  // Bid, Ask & Trades
     mdRequest.set(FIX::NoRelatedSym(1));    // One symbol
+
+    // Add block trade field so we can identify
+    mdRequest.setField(FIX::DeribitShowBlockTradeId(true));
+    mdRequest.setField(FIX::DeribitSkipBlockTrades(false));
 
     // Add entry types
     FIX44::MarketDataRequest::NoMDEntryTypes bidEntryGroup;

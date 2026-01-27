@@ -42,7 +42,7 @@ void OrdersHandler::onNewOrder(com::liversedge::messages::NewOrder& decoder, std
 
         if (orderType == com::liversedge::messages::OrderType::LIMIT) {
             // Always set post only flags
-            newOrderSingle.setField(FIX::ExecInst(FIXCustomTags::ExecInst_PARTICIPATE_DONT_INITIATE_NO_CROSS));
+            newOrderSingle.setField(FIX::ExecInst(FIX::ExecInst_PARTICIPATE_DONT_INITIATE_NO_CROSS));
         }
         if (orderType != com::liversedge::messages::OrderType::MARKET) {
             newOrderSingle.setField(FIX::Price(price.convert_to<double>()));
@@ -96,7 +96,7 @@ void OrdersHandler::onAmendOrder(com::liversedge::messages::AmendOrder& decoder,
 
         if (orderType == com::liversedge::messages::OrderType::LIMIT) {
             // Always set post only flags
-            orderCancelReplaceRequest.setField(FIX::ExecInst(FIXCustomTags::ExecInst_PARTICIPATE_DONT_INITIATE_NO_CROSS));
+            orderCancelReplaceRequest.setField(FIX::ExecInst(FIX::ExecInst_PARTICIPATE_DONT_INITIATE_NO_CROSS));
         }
         if (orderType != com::liversedge::messages::OrderType::MARKET) {
             orderCancelReplaceRequest.setField(FIX::Price(price.convert_to<double>()));
