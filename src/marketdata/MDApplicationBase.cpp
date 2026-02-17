@@ -123,11 +123,9 @@ void MDApplicationBase::subscribe(std::string symbols[], int nSymbols)
 }
 
 void MDApplicationBase::onMessage(const FIX44::MarketDataRequest& message, const FIX::SessionID& sessionID) {
-    // logFixMessage("Received market data request: ", message);
 }
 
 void MDApplicationBase::onMessage(const FIX44::MarketDataRequestReject& message, const FIX::SessionID& sessionID) {
-    // std::cout << "received market data request reject" << std::endl;
 }
 
 void MDApplicationBase::onMessage(const FIX44::MarketDataSnapshotFullRefresh& message, const FIX::SessionID& sessionID) {
@@ -137,7 +135,6 @@ void MDApplicationBase::onMessage(const FIX44::MarketDataSnapshotFullRefresh& me
 }
 
 void MDApplicationBase::onMessage(const FIX44::MarketDataIncrementalRefresh& message, const FIX::SessionID& sessionID) {
-    // std::cout << "received market data incremental refresh" << std::endl;
 }
 
 void MDApplicationBase::onMessage(const FIX44::SecurityList& message, const FIX::SessionID& sessionID) {
