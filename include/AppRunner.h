@@ -11,15 +11,16 @@
 #include <boost/iostreams/device/mapped_file.hpp>
 #include <string_view>
 #include <filesystem>
-#include "marketdata/MDApplicationBase.h"
-#include "marketdata/MDApplication.h"
+#include "marketdata/DeribitMDApplicationBase.h"
+#include "marketdata/DeribitMDApplication.h"
 #include "gateway/GWApplication.h"
 #include "gateway/GWRunner.h"
 #include "util/SimpleConfig.h"
-#include "historical/ApplicationPersister.h"
+#include "historical/DeribitPersister.h"
+#include "historical/HyperliquidPersister.h"
 #include "util/CmdLineOptions.h"
 #include "util/NullLogFactory.h"
-#include "marketdata/MessageProcessor.h"
+#include "marketdata/DeribitMessageProcessor.h"
 #include "quickfix/FileStore.h"
 #include "quickfix/FileLog.h"
 #include "quickfix/SocketInitiator.h"
@@ -32,11 +33,11 @@
 class AppRunner
 {
 public:
-	explicit AppRunner(const SimpleConfig& config);
+	explicit AppRunner(SimpleConfig& config);
 	int runMarketdata();
 	int runGateway();
 	int runProcessRawMarketdata();
 	int runMarketdataHistoricalStorage();
 private:
-	SimpleConfig config_;
+	SimpleConfig& config_;
 };

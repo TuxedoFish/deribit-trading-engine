@@ -45,10 +45,10 @@ set(MAIN_SOURCES
 )
 
 set(FIX_SOURCES
-        include/marketdata/MDApplicationBase.h
-        src/marketdata/MDApplicationBase.cpp
-        include/marketdata/MDApplication.h
-        src/marketdata/MDApplication.cpp
+        include/marketdata/DeribitMDApplicationBase.h
+        src/marketdata/DeribitMDApplicationBase.cpp
+        include/marketdata/DeribitMDApplication.h
+        src/marketdata/DeribitMDApplication.cpp
         include/fix/FIXRunner.h
         src/fix/FIXRunner.cpp
         include/fix/FIXCustomTags.h
@@ -87,8 +87,8 @@ set(UTIL_SOURCES
 set(MARKETDATA_SOURCES
         include/historical/MarketDataLogger.h
         src/historical/MarketDataLogger.cpp
-        include/marketdata/MessageProcessor.h
-        src/marketdata/MessageProcessor.cpp
+        include/marketdata/DeribitMessageProcessor.h
+        src/marketdata/DeribitMessageProcessor.cpp
         include/sbe/SBEBinaryWriter.h
         src/sbe/SBEBinaryWriter.cpp
         include/sbe/SBEMessageListener.h
@@ -97,8 +97,10 @@ set(MARKETDATA_SOURCES
 )
 
 set(HISTORICAL_SOURCES
-        include/historical/ApplicationPersister.h
-        src/historical/ApplicationPersister.cpp
+        include/historical/DeribitPersister.h
+        src/historical/DeribitPersister.cpp
+        include/historical/HyperliquidPersister.h
+        src/historical/HyperliquidPersister.cpp
         include/historical/FileMessageProcessor.h
         src/historical/FileMessageProcessor.cpp
         include/historical/MarketdataHistoricalRunner.h
@@ -123,6 +125,8 @@ endif ()
 find_package(OpenSSL REQUIRED)
 find_package(quickfix CONFIG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS iostreams filesystem system)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/hyperliquid-sdk-cpp)
+add_subdirectory("third_party/hyperliquid-sdk-cpp")
 
 if (WIN32)
     target_link_libraries(deribit-trading-engine
@@ -135,7 +139,7 @@ elseif (UNIX)
 endif ()
 
 target_link_libraries(deribit-trading-engine
-        ${OPENSSL_LIBRARIES} quickfix
+        ${OPENSSL_LIBRARIES} quickfix hyperliquid-sdk
         Boost::iostreams Boost::filesystem Boost::system
 )
 

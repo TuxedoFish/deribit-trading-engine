@@ -2,14 +2,17 @@
 #include "../include/gateway/RefDataHolder.h"
 #include "../include/sbe/SBEBinaryWriter.h"
 #include "../include/util/SimpleConfig.h"
+#include "hyperliquid/MarketData.h"
+#include "src/internal/WSRunner.h"
 
-AppRunner::AppRunner(const SimpleConfig& config) : config_{ config } {
+AppRunner::AppRunner(SimpleConfig& config) : config_{config}
+{
 }
 
 int AppRunner::runMarketdata()
 {
     // Create application
-    MDApplication application(config_);
+    DeribitApplication application(config_);
 
     // Create FIX runner and start session
     FIXRunner fixRunner(config_);
@@ -38,18 +41,54 @@ int AppRunner::runGateway()
     return fixRunner.run(application, startupMessage, [&gatewayRunner]() { gatewayRunner.run(); }, true);
 }
 
-int AppRunner::runProcessRawMarketdata() {
+int AppRunner::runProcessRawMarketdata()
+{
     MarketdataHistoricalRunner runner(config_);
     return runner.run();
 }
 
-int AppRunner::runMarketdataHistoricalStorage() {
-    // Create application
-    ApplicationPersister application(config_);
+int AppRunner::runMarketdataHistoricalStorage()
+{
+    std::string exchangeName = (config_.getString("exchange_name", "UNSET"));
 
-    // Create FIX runner and start session
-    FIXRunner fixRunner(config_);
-    std::string startupMessage = "Publishing raw FIX messages to: " + config_.getString("md_raw_fix_file_path");
+    if (exchangeName == "deribit") {
+        // Create application
+        DeribitPersister application(config_);
 
-    return fixRunner.run(application, startupMessage);
+        // Create FIX runner and start session
+        FIXRunner fixRunner(config_);
+        std::string startupMessage = "Publishing raw FIX messages to: " + config_.getString("md_raw_fix_file_path");
+
+        return fixRunner.run(application, startupMessage);
+    }
+    if (exchangeName == "hyperliquid")
+    {
+        // Create application
+        HyperliquidPersister application(config_);
+
+        // Create WS runner and start up stream
+        hyperliquid::MarketData marketdata(hyperliquid::Environment::Mainnet, application);
+        marketdata.start();
+        marketdata.subscribe(hyperliquid::MessageType::L2Book, {{"coin", "BTC"}});
+        marketdata.subscribe(hyperliquid::MessageType::Trades, {{"coin", "BTC"}});
+
+        std::cout << "Publishing raw WS messages to: " + config_.getString("md_raw_ws_file_path") << std::endl;
+        while (true)
+        {
+            std::string value;
+            std::cin >> value;
+
+            if (value == "q")
+            {
+                break;
+            }
+
+            std::cout << std::endl;
+        }
+
+        marketdata.stop();
+    }
+
+    std::cout << "Unrecognized exchange type: " << exchangeName << std::endl;
+    return 1;
 }

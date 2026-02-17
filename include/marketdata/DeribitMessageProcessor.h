@@ -30,11 +30,11 @@ struct ProcessorSecurityInfo
 // Caps levels to 5000 to ensure they fit in 128kb buffer
 constexpr int MAX_LEVELS = 50;
 
-class MessageProcessor : public FIX::MessageCracker
+class DeribitMessageProcessor : public FIX::MessageCracker
 {
 public:
-    explicit MessageProcessor(SBEBinaryWriter& writer);
-    ~MessageProcessor() override = default;
+    explicit DeribitMessageProcessor(SBEBinaryWriter& writer);
+    ~DeribitMessageProcessor() override = default;
 
     void onMessage(const FIX44::MarketDataRequest&, const FIX::SessionID&) override;
     void onMessage(const FIX44::MarketDataRequestReject&, const FIX::SessionID&) override;

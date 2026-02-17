@@ -1,13 +1,13 @@
-#include "../../include/marketdata/MessageProcessor.h"
+#include "../../include/marketdata/DeribitMessageProcessor.h"
 
-MessageProcessor::MessageProcessor(SBEBinaryWriter& writer)
+DeribitMessageProcessor::DeribitMessageProcessor(SBEBinaryWriter& writer)
     : m_writer(writer), securityIdCounter(0)
 {
     // Initialize state
     securitiesInfo.assign(100, ProcessorSecurityInfo{});
 }
 
-void MessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& message, const FIX::SessionID& sessionID)
+void DeribitMessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& message, const FIX::SessionID& sessionID)
 {
     const uint64_t timestamp = GetSendingTime(static_cast<FIX44::Message>(message));
 
@@ -185,7 +185,7 @@ void MessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& mes
     UpdateSecurityStatus(securityId, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::ONLINE);
 }
 
-void MessageProcessor::onMessage(const FIX44::MarketDataIncrementalRefresh& message, const FIX::SessionID& sessionID)
+void DeribitMessageProcessor::onMessage(const FIX44::MarketDataIncrementalRefresh& message, const FIX::SessionID& sessionID)
 {
     if (!m_shouldOutput)
     {
@@ -239,7 +239,7 @@ void MessageProcessor::onMessage(const FIX44::MarketDataIncrementalRefresh& mess
     }
 }
 
-void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::SessionID& sessionID)
+void DeribitMessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::SessionID& sessionID)
 {
     const uint64_t timestamp = GetSendingTime(static_cast<FIX44::Message>(message));
 
@@ -322,14 +322,14 @@ void MessageProcessor::onMessage(const FIX44::SecurityList& message, const FIX::
 
 }
 
-void MessageProcessor::onMessage(const FIX44::Logout& message, const FIX::SessionID& sessionID)
+void DeribitMessageProcessor::onMessage(const FIX44::Logout& message, const FIX::SessionID& sessionID)
 {
     std::cout << "Processing FIX44::Logout message" << std::endl;
     const uint64_t timestamp = GetSendingTime(static_cast<FIX44::Message>(message));
     InvalidateState(timestamp);
 }
 
-void MessageProcessor::onMessage(const FIX44::Logon& message, const FIX::SessionID& sessionID)
+void DeribitMessageProcessor::onMessage(const FIX44::Logon& message, const FIX::SessionID& sessionID)
 {
     std::cout << "Processing FIX44::Logon message" << std::endl;
     const uint64_t timestamp = GetSendingTime(static_cast<FIX44::Message>(message));
@@ -345,15 +345,15 @@ void MessageProcessor::onMessage(const FIX44::Logon& message, const FIX::Session
     UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::STARTING, timestamp);
 }
 
-void MessageProcessor::onMessage(const FIX44::MarketDataRequest& message, const FIX::SessionID& sessionID)
+void DeribitMessageProcessor::onMessage(const FIX44::MarketDataRequest& message, const FIX::SessionID& sessionID)
 {
 }
 
-void MessageProcessor::onMessage(const FIX44::MarketDataRequestReject& message, const FIX::SessionID& sessionID)
+void DeribitMessageProcessor::onMessage(const FIX44::MarketDataRequestReject& message, const FIX::SessionID& sessionID)
 {
 }
 
-bool MessageProcessor::InvalidateState(std::uint64_t timestamp)
+bool DeribitMessageProcessor::InvalidateState(std::uint64_t timestamp)
 {
     // Send out SecurityStatus - Offline for all securities
     for (int i = 0; i < securityIdCounter; i++)
@@ -371,7 +371,7 @@ bool MessageProcessor::InvalidateState(std::uint64_t timestamp)
     return true;
 }
 
-bool MessageProcessor::UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::Value value, const std::uint64_t timestamp)
+bool DeribitMessageProcessor::UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::Value value, const std::uint64_t timestamp)
 {
     if (!m_shouldOutput)
     {
@@ -396,7 +396,7 @@ bool MessageProcessor::UpdateConnectionStatus(com::liversedge::messages::Connect
     return true;
 }
 
-bool MessageProcessor::RemoveSecurity(int securityId)
+bool DeribitMessageProcessor::RemoveSecurity(int securityId)
 {
     if (!m_shouldOutput)
     {
@@ -421,7 +421,7 @@ bool MessageProcessor::RemoveSecurity(int securityId)
     return true;
 }
 
-bool MessageProcessor::UpdateSecurityStatus(int securityId, const std::uint64_t timestamp, com::liversedge::messages::SecurityStatusEnum::Value newStatus)
+bool DeribitMessageProcessor::UpdateSecurityStatus(int securityId, const std::uint64_t timestamp, com::liversedge::messages::SecurityStatusEnum::Value newStatus)
 {
     if (securityId >= securityIdCounter)
     {
@@ -458,13 +458,13 @@ bool MessageProcessor::UpdateSecurityStatus(int securityId, const std::uint64_t 
     return true;
 }
 
-void MessageProcessor::setShouldOutput(bool shouldOutput)
+void DeribitMessageProcessor::setShouldOutput(bool shouldOutput)
 {
     std::cout << "MessageProcessor: Setting shouldOutput to " << shouldOutput << std::endl;
     m_shouldOutput = shouldOutput;
 }
 
-uint64_t MessageProcessor::GetSendingTime(FIX44::Message message)
+uint64_t DeribitMessageProcessor::GetSendingTime(FIX44::Message message)
 {
     FIX::SendingTime sendingTimeField;
     message.getHeader().get(sendingTimeField);
@@ -473,7 +473,7 @@ uint64_t MessageProcessor::GetSendingTime(FIX44::Message message)
 }
 
 template<typename T>
-bool MessageProcessor::ProcessMDEntry(const T& entry, int securityId, uint64_t timestamp)
+bool DeribitMessageProcessor::ProcessMDEntry(const T& entry, int securityId, uint64_t timestamp)
 {
     if (!m_shouldOutput)
     {
@@ -562,6 +562,6 @@ bool MessageProcessor::ProcessMDEntry(const T& entry, int securityId, uint64_t t
 }
 
 // Explicit template instantiations
-template bool MessageProcessor::ProcessMDEntry<FIX44::MarketDataIncrementalRefresh::NoMDEntries>(const FIX44::MarketDataIncrementalRefresh::NoMDEntries& entry, int securityId, uint64_t timestamp);
-template bool MessageProcessor::ProcessMDEntry<FIX44::MarketDataSnapshotFullRefresh::NoMDEntries>(const FIX44::MarketDataSnapshotFullRefresh::NoMDEntries& entry, int securityId, uint64_t timestamp);
+template bool DeribitMessageProcessor::ProcessMDEntry<FIX44::MarketDataIncrementalRefresh::NoMDEntries>(const FIX44::MarketDataIncrementalRefresh::NoMDEntries& entry, int securityId, uint64_t timestamp);
+template bool DeribitMessageProcessor::ProcessMDEntry<FIX44::MarketDataSnapshotFullRefresh::NoMDEntries>(const FIX44::MarketDataSnapshotFullRefresh::NoMDEntries& entry, int securityId, uint64_t timestamp);
 
