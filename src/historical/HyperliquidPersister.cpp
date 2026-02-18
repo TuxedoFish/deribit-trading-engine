@@ -17,11 +17,21 @@ void HyperliquidPersister::onMessage(const std::string& message)
 void HyperliquidPersister::onConnected()
 {
     std::cout << "Connected" << std::endl;
+    if (m_logger)
+    {
+        m_logger->writeToLog("IN_APP", R"({"channel": "connect"})");
+    }
+    HyperliquidMDApplicationBase::onConnected();
 }
 
 void HyperliquidPersister::onDisconnected()
 {
     std::cout << "Disconnected" << std::endl;
+    if (m_logger)
+    {
+        m_logger->writeToLog("IN_APP", R"({"channel": "disconnect"})");
+    }
+    HyperliquidMDApplicationBase::onDisconnected();
 }
 
 // hyperliquid::RestListener

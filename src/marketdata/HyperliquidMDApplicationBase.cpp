@@ -3,19 +3,24 @@
 #include "hyperliquid/rest/InfoApi.h"
 #include "hyperliquid/rest/RestMessageParser.h"
 #include <iostream>
+#include <set>
 
 HyperliquidMDApplicationBase::~HyperliquidMDApplicationBase() = default;
 
 void HyperliquidMDApplicationBase::start()
 {
+    // Convert the CSV of desired coins to a set of coins
+    std::stringstream desiredCoinsCsv(m_config.getString("coins", "BTC"));
+    std::string coin;
+    while(std::getline(desiredCoinsCsv, coin, ','))
+    {
+        m_desiredCoins.insert(coin);
+    }
+
     // Start info API (RAII — thread starts in constructor)
     m_infoApi = std::make_unique<hyperliquid::InfoApi>(hyperliquid::Environment::Mainnet, *this);
 
-    // Fetch security list — response arrives via onMessage(string, InfoEndpointType)
-    m_infoApi->sendRequest(hyperliquid::InfoEndpointType::Meta); // Main DEX
-    m_infoApi->sendRequest(hyperliquid::InfoEndpointType::Meta, {{"dex", "xyz"}}); // XYZ DEX (Tokenized equities)
-
-    // Start market data websocket
+    // Start market data websocket (reconnection with backoff is handled by the SDK)
     m_marketData = std::make_unique<hyperliquid::MarketData>(hyperliquid::Environment::Mainnet, *this);
     m_marketData->start();
 }
@@ -40,6 +45,9 @@ void HyperliquidMDApplicationBase::onMessage(const std::string& message) {
 }
 
 void HyperliquidMDApplicationBase::onConnected() {
+    // Once connected query for securities to start subscribing to
+    m_infoApi->sendRequest(hyperliquid::InfoEndpointType::Meta); // Main DEX
+    m_infoApi->sendRequest(hyperliquid::InfoEndpointType::Meta, {{"dex", "xyz"}}); // XYZ DEX (Tokenized equities)
 }
 
 void HyperliquidMDApplicationBase::onDisconnected() {
@@ -59,7 +67,11 @@ void HyperliquidMDApplicationBase::onMeta(const hyperliquid::MetaResponse& respo
     // Now start WS and subscribe
     for (const auto& coin : m_universe)
     {
-        subscribeToMarket(coin.name);
+        if (m_desiredCoins.find(coin.name) != m_desiredCoins.end())
+        {
+            std::cout << "Subscribing to " << coin.name << std::endl;
+            subscribeToMarket(coin.name);
+        }
     }
 }
 

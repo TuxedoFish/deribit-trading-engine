@@ -1,6 +1,8 @@
 #pragma once
 
+#include <atomic>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 #include "../util/SimpleConfig.h"
@@ -42,6 +44,7 @@ public:
 protected:
     virtual void subscribeToMarket(const std::string& coin);
     const SimpleConfig& m_config;
+    std::set<std::string> m_desiredCoins;
     std::vector<hyperliquid::AssetMeta> m_universe;
 
 private:
