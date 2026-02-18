@@ -47,6 +47,8 @@ set(MAIN_SOURCES
 set(FIX_SOURCES
         include/marketdata/DeribitMDApplicationBase.h
         src/marketdata/DeribitMDApplicationBase.cpp
+        include/marketdata/HyperliquidMDApplicationBase.h
+        src/marketdata/HyperliquidMDApplicationBase.cpp
         include/marketdata/DeribitMDApplication.h
         src/marketdata/DeribitMDApplication.cpp
         include/fix/FIXRunner.h

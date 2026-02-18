@@ -2,14 +2,12 @@
 
 #include "../util/SimpleConfig.h"
 #include "MarketDataLogger.h"
+#include "../marketdata/HyperliquidMDApplicationBase.h"
 #include <memory>
 #include <string>
 
-#include "../marketdata/HyperliquidMDApplicationBase.h"
-#include "hyperliquid/SocketListener.h"
-
-class HyperliquidPersister : public HyperliquidMDApplicationBase
-{
+class HyperliquidPersister : public HyperliquidMDApplicationBase {
+private:
     std::unique_ptr<MarketDataLogger> m_logger;
 
 public:
@@ -17,8 +15,11 @@ public:
     explicit HyperliquidPersister(SimpleConfig& config);
     virtual ~HyperliquidPersister() = default;
 
-    // hyperliquid::SocketListener
+    // hyperliquid::WebsocketListener
     void onMessage(const std::string& message) override;
     void onConnected() override;
     void onDisconnected() override;
+
+    // hyperliquid::RestListener
+    virtual void onMessage(const std::string& message, hyperliquid::InfoEndpointType type) override;
 };

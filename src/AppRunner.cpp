@@ -2,8 +2,6 @@
 #include "../include/gateway/RefDataHolder.h"
 #include "../include/sbe/SBEBinaryWriter.h"
 #include "../include/util/SimpleConfig.h"
-#include "hyperliquid/MarketData.h"
-#include "src/internal/WSRunner.h"
 
 AppRunner::AppRunner(SimpleConfig& config) : config_{config}
 {
@@ -63,14 +61,8 @@ int AppRunner::runMarketdataHistoricalStorage()
     }
     if (exchangeName == "hyperliquid")
     {
-        // Create application
         HyperliquidPersister application(config_);
-
-        // Create WS runner and start up stream
-        hyperliquid::MarketData marketdata(hyperliquid::Environment::Mainnet, application);
-        marketdata.start();
-        marketdata.subscribe(hyperliquid::MessageType::L2Book, {{"coin", "BTC"}});
-        marketdata.subscribe(hyperliquid::MessageType::Trades, {{"coin", "BTC"}});
+        application.start();
 
         std::cout << "Publishing raw WS messages to: " + config_.getString("md_raw_ws_file_path") << std::endl;
         while (true)
@@ -86,7 +78,7 @@ int AppRunner::runMarketdataHistoricalStorage()
             std::cout << std::endl;
         }
 
-        marketdata.stop();
+        application.stop();
     }
 
     std::cout << "Unrecognized exchange type: " << exchangeName << std::endl;

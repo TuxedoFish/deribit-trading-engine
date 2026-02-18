@@ -5,12 +5,12 @@ HyperliquidPersister::HyperliquidPersister(SimpleConfig& config) : HyperliquidMD
 {
 }
 
+// hyperliquid::WebsocketListener
 void HyperliquidPersister::onMessage(const std::string& message)
 {
-    std::cout << message << std::endl;
-    if (!m_logger)
+    if (m_logger)
     {
-        m_logger.get()->writeToLog("IN_APP", message);
+        m_logger->writeToLog("IN_APP", message);
     }
 }
 
@@ -22,4 +22,14 @@ void HyperliquidPersister::onConnected()
 void HyperliquidPersister::onDisconnected()
 {
     std::cout << "Disconnected" << std::endl;
+}
+
+// hyperliquid::RestListener
+void HyperliquidPersister::onMessage(const std::string& message, hyperliquid::InfoEndpointType type)
+{
+    if (m_logger)
+    {
+        m_logger->writeToLog("IN_APP", message);
+    }
+    HyperliquidMDApplicationBase::onMessage(message, type);
 }
