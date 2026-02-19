@@ -1,7 +1,6 @@
 #include "../../include/marketdata/HyperliquidMDApplicationBase.h"
 #include "hyperliquid/websocket/MarketData.h"
 #include "hyperliquid/rest/InfoApi.h"
-#include "hyperliquid/rest/RestMessageParser.h"
 #include <iostream>
 #include <set>
 
@@ -42,6 +41,7 @@ void HyperliquidMDApplicationBase::subscribeToMarket(const std::string& coin)
 
 // hyperliquid::WebsocketListener
 void HyperliquidMDApplicationBase::onMessage(const std::string& message) {
+    m_wsParser.crack(message, *this);
 }
 
 void HyperliquidMDApplicationBase::onConnected() {
@@ -55,8 +55,7 @@ void HyperliquidMDApplicationBase::onDisconnected() {
 
 // hyperliquid::RestListener — parse and dispatch to typed callbacks
 void HyperliquidMDApplicationBase::onMessage(const std::string& message, hyperliquid::InfoEndpointType type) {
-    hyperliquid::RestMessageParser parser(*this);
-    parser.parse(message, type);
+    m_restParser.parse(message, type);
 }
 
 // hyperliquid::InfoEndpointListener
@@ -73,11 +72,4 @@ void HyperliquidMDApplicationBase::onMeta(const hyperliquid::MetaResponse& respo
             subscribeToMarket(coin.name);
         }
     }
-}
-
-// hyperliquid::WSMessageHandler
-void HyperliquidMDApplicationBase::onL2BookLevel(const hyperliquid::L2BookUpdate& book, const hyperliquid::PriceLevel& level) {
-}
-
-void HyperliquidMDApplicationBase::onTrade(const hyperliquid::Trade& trade) {
 }

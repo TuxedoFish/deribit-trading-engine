@@ -85,6 +85,8 @@
             <validValue name="USD" description="us dollar">0</validValue>
             <validValue name="BTC" description="bitcoin">1</validValue>
             <validValue name="ETH" description="ethereum">2</validValue>
+            <validValue name="USDC" description="ethereum">3</validValue>
+            <validValue name="CONTRACT" description="ethereum">4</validValue>
         </enum>
 
         <enum name="MDUpdateType" encodingType="uint8">

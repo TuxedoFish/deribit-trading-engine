@@ -55,12 +55,17 @@ public:
     static void setQty(com::liversedge::messages::Qty& field, const std::string& value);
     static void setPrice(com::liversedge::messages::Price& field, const std::string& value);
     static void setDate(com::liversedge::messages::Date& field, const std::string& value);
+
     // Buffer access helpers
     static std::int64_t getInt64(const char* buffer, std::size_t offset);
+    static int64_t stringToMantissa(const std::string& str, int8_t exponent = -4);
+    static int64_t powerOfTenMantissa(int decimals, int8_t exponent);
+
     // SBE -> Internal
     static Dec convertPrice(const com::liversedge::messages::Price& price);
     static Dec convertQty(const com::liversedge::messages::Qty& qty);
     static std::string extractVarString(const com::liversedge::messages::VarStringEncoding& varString, const int encodedLength, const int variableOffset = 0);
+
     // FIX -> SBE
     static com::liversedge::messages::Currency::Value currencyFromString(const std::string& currency);
     static com::liversedge::messages::SettlType::Value settlTypeFromString(const std::string& settlType);

@@ -1,10 +1,7 @@
 #include "../../include/marketdata/DeribitMessageProcessor.h"
 
-DeribitMessageProcessor::DeribitMessageProcessor(SBEBinaryWriter& writer)
-    : m_writer(writer), securityIdCounter(0)
+DeribitMessageProcessor::DeribitMessageProcessor(SBEBinaryWriter& writer) : MessageProcessor(writer)
 {
-    // Initialize state
-    securitiesInfo.assign(100, ProcessorSecurityInfo{});
 }
 
 void DeribitMessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefresh& message, const FIX::SessionID& sessionID)
@@ -12,18 +9,17 @@ void DeribitMessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefre
     const uint64_t timestamp = GetSendingTime(static_cast<FIX44::Message>(message));
 
     const std::string& symbol = message.getField(FIX::FIELD::Symbol);
-    auto it = m_symbolToSecurityId.find(symbol);
-    if (it == m_symbolToSecurityId.end())
+    int securityId = getSecurityId(symbol);
+    if (securityId == -1)
     {
         std::cerr << "No matching security found for " << symbol << std::endl;
         return;
     }
-    int securityId = it->second;
 
     if (!m_shouldOutput)
     {
         // Updates security status to be online
-        UpdateSecurityStatus(securityId, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::ONLINE);
+        updateSecurityStatus(securityId, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::ONLINE);
         return;
     }
 
@@ -182,7 +178,7 @@ void DeribitMessageProcessor::onMessage(const FIX44::MarketDataSnapshotFullRefre
     }
 
     // Send out SecurityStatus - Online afterwards
-    UpdateSecurityStatus(securityId, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::ONLINE);
+    updateSecurityStatus(securityId, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::ONLINE);
 }
 
 void DeribitMessageProcessor::onMessage(const FIX44::MarketDataIncrementalRefresh& message, const FIX::SessionID& sessionID)
@@ -196,16 +192,15 @@ void DeribitMessageProcessor::onMessage(const FIX44::MarketDataIncrementalRefres
 
     // Get symbol and find security ID using hash map lookup
     const std::string& symbol = message.getField(FIX::FIELD::Symbol);
-    const auto it = m_symbolToSecurityId.find(symbol);
-    if (it == m_symbolToSecurityId.end())
+    const int securityId = getSecurityId(symbol);
+    if (securityId == -1)
     {
         std::cerr << "No matching security found for incremental update: " << symbol << std::endl;
         return;
     }
-    const int securityId = it->second;
 
     // Check security status is ONLINE
-    if (securitiesInfo[securityId].status != com::liversedge::messages::SecurityStatusEnum::Value::ONLINE)
+    if (getSecurityStatus(securityId) != com::liversedge::messages::SecurityStatusEnum::Value::ONLINE)
     {
         std::cerr << "Ignoring incremental update for offline security: " << symbol << std::endl;
         return;
@@ -255,14 +250,8 @@ void DeribitMessageProcessor::onMessage(const FIX44::SecurityList& message, cons
         FIX44::SecurityList::NoRelatedSym security;
         message.getGroup(i, security);
 
-        // Give the security an internal identifier
         const std::string& symbol = security.getField(FIX::FIELD::Symbol);
-        securitiesInfo[securityIdCounter].symbol = symbol;
-        securitiesInfo[securityIdCounter].status = com::liversedge::messages::SecurityStatusEnum::Value::NULL_VALUE;
-        uint32_t id = securityIdCounter;
-
-        // Add to hash map for O(1) lookups
-        m_symbolToSecurityId[symbol] = securityIdCounter;
+        int id = createSecurity(symbol);
 
         auto securityType = SBEUtils::securityTypeFromString(security.getField(FIX::FIELD::SecurityType));
         if (securityType == com::liversedge::messages::SecurityType::FUTCO)
@@ -274,12 +263,13 @@ void DeribitMessageProcessor::onMessage(const FIX44::SecurityList& message, cons
         {
             if (!m_writer.prepareMessage(m_securityDefinition))
             {
-                std::cerr << "Error writing security definition" << std::endl;
+                std::cerr << "Error preparing security definition" << std::endl;
+                removeSecurity(id);
                 continue;
             }
 
             // Add all security information
-            m_securityDefinition.id(securityIdCounter);
+            m_securityDefinition.id(id);
             m_securityDefinition.currency(SBEUtils::currencyFromString(security.getField(FIX::FIELD::Currency)));
             m_securityDefinition.commCurrency(SBEUtils::currencyFromString(security.getField(FIX::FIELD::CommCurrency)));
             m_securityDefinition.settlCurrency(SBEUtils::currencyFromString(security.getField(FIX::FIELD::SettlCurrency)));
@@ -300,15 +290,13 @@ void DeribitMessageProcessor::onMessage(const FIX44::SecurityList& message, cons
             if (!m_writer.writeMessage(m_securityDefinition))
             {
                 std::cerr << "Error writing security definition" << std::endl;
-                securityIdCounter--;
+                removeSecurity(id);
                 continue;
             }
         }
 
-        securityIdCounter++;
-
         // Send the security status update
-        if (!UpdateSecurityStatus(id, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::PENDING_SNAPSHOT))
+        if (!updateSecurityStatus(id, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::PENDING_SNAPSHOT))
         {
             std::cerr << "Error updating security definition to PENDING_SNAPSHOT" << std::endl;
         }
@@ -317,7 +305,7 @@ void DeribitMessageProcessor::onMessage(const FIX44::SecurityList& message, cons
     if (hasSpreads)
     {
         // Bit of a hack but once the spreads are all processed then we are online
-        UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::Value::ONLINE, timestamp);
+        updateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::Value::ONLINE, timestamp);
     }
 
 }
@@ -326,7 +314,7 @@ void DeribitMessageProcessor::onMessage(const FIX44::Logout& message, const FIX:
 {
     std::cout << "Processing FIX44::Logout message" << std::endl;
     const uint64_t timestamp = GetSendingTime(static_cast<FIX44::Message>(message));
-    InvalidateState(timestamp);
+    invalidateState(timestamp);
 }
 
 void DeribitMessageProcessor::onMessage(const FIX44::Logon& message, const FIX::SessionID& sessionID)
@@ -334,15 +322,13 @@ void DeribitMessageProcessor::onMessage(const FIX44::Logon& message, const FIX::
     std::cout << "Processing FIX44::Logon message" << std::endl;
     const uint64_t timestamp = GetSendingTime(static_cast<FIX44::Message>(message));
 
-    if (securityIdCounter != 0)
+    if (getConnectionStatus() == com::liversedge::messages::ConnectionStatusEnum::Value::ONLINE)
     {
-        // Indicates that the marketdata was not safely shutdown
-        std::cerr << "Received Logon before Logout, invalidating the state" << std::endl;
-        InvalidateState(timestamp);
+        std::cerr << "Received Logon while still online, invalidating the state" << std::endl;
+        invalidateState(timestamp);
     }
 
-    // Send out ConnectionStatus - Offline
-    UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::STARTING, timestamp);
+    updateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::STARTING, timestamp);
 }
 
 void DeribitMessageProcessor::onMessage(const FIX44::MarketDataRequest& message, const FIX::SessionID& sessionID)
@@ -351,117 +337,6 @@ void DeribitMessageProcessor::onMessage(const FIX44::MarketDataRequest& message,
 
 void DeribitMessageProcessor::onMessage(const FIX44::MarketDataRequestReject& message, const FIX::SessionID& sessionID)
 {
-}
-
-bool DeribitMessageProcessor::InvalidateState(std::uint64_t timestamp)
-{
-    // Send out SecurityStatus - Offline for all securities
-    for (int i = 0; i < securityIdCounter; i++)
-    {
-        UpdateSecurityStatus(i, timestamp, com::liversedge::messages::SecurityStatusEnum::Value::OFFLINE);
-        RemoveSecurity(i);
-    }
-
-    // Send out ConnectionStatus - Offline
-    UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::OFFLINE, timestamp);
-
-    // Reset symbol state
-    securityIdCounter = 0;
-    m_symbolToSecurityId.clear();
-    return true;
-}
-
-bool DeribitMessageProcessor::UpdateConnectionStatus(com::liversedge::messages::ConnectionStatusEnum::Value value, const std::uint64_t timestamp)
-{
-    if (!m_shouldOutput)
-    {
-        return true;
-    }
-    if (!m_writer.prepareMessage(m_connectionStatus))
-    {
-        std::cerr << "Error preparing connection status update" << std::endl;
-        return false;
-    }
-
-    m_connectionStatus.status(value);
-    m_connectionStatus.timestamp(timestamp);
-
-    if (!m_writer.writeMessage(m_connectionStatus))
-    {
-        std::cerr << "Error writing connection status update" << std::endl;
-        return false;
-    }
-
-
-    return true;
-}
-
-bool DeribitMessageProcessor::RemoveSecurity(int securityId)
-{
-    if (!m_shouldOutput)
-    {
-        return true;
-    }
-    if (!m_writer.prepareMessage(m_securityDefinition))
-    {
-        std::cerr << "Error preparing connection status update" << std::endl;
-        return false;
-    }
-
-    m_securityDefinition.id(securityId);
-    m_securityDefinition.action(com::liversedge::messages::ActionEnum::REMOVE);
-
-    if (!m_writer.writeMessage(m_securityDefinition))
-    {
-        std::cerr << "Error writing connection status update" << std::endl;
-        return false;
-    }
-
-
-    return true;
-}
-
-bool DeribitMessageProcessor::UpdateSecurityStatus(int securityId, const std::uint64_t timestamp, com::liversedge::messages::SecurityStatusEnum::Value newStatus)
-{
-    if (securityId >= securityIdCounter)
-    {
-        std::cerr << "Error security " << securityId << "not found" << std::endl;
-        return false;
-    }
-    if (securitiesInfo[securityId].status == newStatus)
-    {
-        // No change don't send
-        return false;
-    }
-    securitiesInfo[securityId].status = newStatus;
-
-    if (!m_shouldOutput)
-    {
-        return true;
-    }
-    if (!m_writer.prepareMessage(m_securityStatus))
-    {
-        std::cerr << "Error preparing security status update" << std::endl;
-        return false;
-    }
-
-    m_securityStatus.securityId(securityId);
-    m_securityStatus.timestamp(timestamp);
-    m_securityStatus.status(newStatus);
-
-    if (!m_writer.writeMessage(m_securityStatus))
-    {
-        std::cerr << "Error writing security status update" << std::endl;
-        return false;
-    }
-
-    return true;
-}
-
-void DeribitMessageProcessor::setShouldOutput(bool shouldOutput)
-{
-    std::cout << "MessageProcessor: Setting shouldOutput to " << shouldOutput << std::endl;
-    m_shouldOutput = shouldOutput;
 }
 
 uint64_t DeribitMessageProcessor::GetSendingTime(FIX44::Message message)
@@ -499,11 +374,15 @@ bool DeribitMessageProcessor::ProcessMDEntry(const T& entry, int securityId, uin
     if (entry.isSetField(FIX::FIELD::MDUpdateAction))
     {
         const std::string& actionStr = entry.getField(FIX::FIELD::MDUpdateAction);
-        if (actionStr == "0") {
+        if (actionStr == "0")        {
             updateAction = com::liversedge::messages::MDUpdateAction::Value::NEW;
-        } else if (actionStr == "1") {
+        }
+        else if (actionStr == "1")
+        {
             updateAction = com::liversedge::messages::MDUpdateAction::Value::CHANGE;
-        } else if (actionStr == "2") {
+        }
+        else if (actionStr == "2")
+        {
             updateAction = com::liversedge::messages::MDUpdateAction::Value::DELETE;
         }
     }
@@ -536,7 +415,9 @@ bool DeribitMessageProcessor::ProcessMDEntry(const T& entry, int securityId, uin
         // Set trade side (what the taker was doing)
         FIX::Side side;
         entry.getField(side);
-        m_mdUpdate.side(side.getValue() == FIX::Side_BUY ? com::liversedge::messages::MDSide::ASK : com::liversedge::messages::MDSide::BID);
+        m_mdUpdate.side(side.getValue() == FIX::Side_BUY
+                            ? com::liversedge::messages::MDSide::ASK
+                            : com::liversedge::messages::MDSide::BID);
 
         // Set trade ID if available (optional field)
         if (entry.isSetField(FIX::FIELD::MDEntryID))
@@ -562,6 +443,7 @@ bool DeribitMessageProcessor::ProcessMDEntry(const T& entry, int securityId, uin
 }
 
 // Explicit template instantiations
-template bool DeribitMessageProcessor::ProcessMDEntry<FIX44::MarketDataIncrementalRefresh::NoMDEntries>(const FIX44::MarketDataIncrementalRefresh::NoMDEntries& entry, int securityId, uint64_t timestamp);
-template bool DeribitMessageProcessor::ProcessMDEntry<FIX44::MarketDataSnapshotFullRefresh::NoMDEntries>(const FIX44::MarketDataSnapshotFullRefresh::NoMDEntries& entry, int securityId, uint64_t timestamp);
-
+template bool DeribitMessageProcessor::ProcessMDEntry<FIX44::MarketDataIncrementalRefresh::NoMDEntries>(
+    const FIX44::MarketDataIncrementalRefresh::NoMDEntries& entry, int securityId, uint64_t timestamp);
+template bool DeribitMessageProcessor::ProcessMDEntry<FIX44::MarketDataSnapshotFullRefresh::NoMDEntries>(
+    const FIX44::MarketDataSnapshotFullRefresh::NoMDEntries& entry, int securityId, uint64_t timestamp);

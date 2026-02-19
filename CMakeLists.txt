@@ -49,6 +49,8 @@ set(FIX_SOURCES
         src/marketdata/DeribitMDApplicationBase.cpp
         include/marketdata/HyperliquidMDApplicationBase.h
         src/marketdata/HyperliquidMDApplicationBase.cpp
+        include/marketdata/HyperliquidMDApplication.h
+        src/marketdata/HyperliquidMDApplication.cpp
         include/marketdata/DeribitMDApplication.h
         src/marketdata/DeribitMDApplication.cpp
         include/fix/FIXRunner.h
@@ -89,8 +91,12 @@ set(UTIL_SOURCES
 set(MARKETDATA_SOURCES
         include/historical/MarketDataLogger.h
         src/historical/MarketDataLogger.cpp
+        include/marketdata/MessageProcessor.h
+        src/marketdata/MessageProcessor.cpp
         include/marketdata/DeribitMessageProcessor.h
         src/marketdata/DeribitMessageProcessor.cpp
+        include/marketdata/HyperliquidMessageProcessor.h
+        src/marketdata/HyperliquidMessageProcessor.cpp
         include/sbe/SBEBinaryWriter.h
         src/sbe/SBEBinaryWriter.cpp
         include/sbe/SBEMessageListener.h

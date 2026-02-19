@@ -11,15 +11,17 @@
 #include "hyperliquid/websocket/WebsocketListener.h"
 #include "hyperliquid/rest/InfoEndpointListener.h"
 #include "hyperliquid/rest/RestListener.h"
+#include "hyperliquid/rest/RestMessageParser.h"
+#include "hyperliquid/websocket/WSMessageParser.h"
 #include "hyperliquid/websocket/MarketData.h"
 
-class HyperliquidMDApplicationBase : public hyperliquid::WSMessageHandler,
-                                     public hyperliquid::WebsocketListener,
+class HyperliquidMDApplicationBase : public hyperliquid::WebsocketListener,
                                      public hyperliquid::RestListener,
-                                     public hyperliquid::InfoEndpointListener
+                                     public hyperliquid::InfoEndpointListener,
+                                     public hyperliquid::WSMessageHandler
 {
 public:
-    HyperliquidMDApplicationBase(const SimpleConfig& config) : m_config{ config } {}
+    HyperliquidMDApplicationBase(const SimpleConfig& config) : m_config{ config }, m_restParser(*this) {}
     virtual ~HyperliquidMDApplicationBase();
 
     // Lifecycle
@@ -34,10 +36,6 @@ public:
     // hyperliquid::RestListener
     virtual void onMessage(const std::string& message, hyperliquid::InfoEndpointType type) override;
 
-    // hyperliquid::WSMessageHandler
-    virtual void onL2BookLevel(const hyperliquid::L2BookUpdate& book, const hyperliquid::PriceLevel& level) override;
-    virtual void onTrade(const hyperliquid::Trade& trade) override;
-
     // hyperliquid::InfoEndpointListener
     virtual void onMeta(const hyperliquid::MetaResponse& response) override;
 
@@ -50,4 +48,6 @@ protected:
 private:
     std::unique_ptr<hyperliquid::MarketData> m_marketData;
     std::unique_ptr<hyperliquid::InfoApi> m_infoApi;
+    hyperliquid::RestMessageParser m_restParser;
+    hyperliquid::WSMessageParser m_wsParser;
 };
