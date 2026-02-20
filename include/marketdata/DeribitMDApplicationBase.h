@@ -23,10 +23,10 @@
 
 using encoding_t = unsigned char const*;
 
-class MDApplicationBase : public FIX::Application, public FIX::MessageCracker
+class DeribitApplicationBase : public FIX::Application, public FIX::MessageCracker
 {
 public:
-    MDApplicationBase(SimpleConfig& config) : m_config{ config } {}
+    DeribitApplicationBase(const SimpleConfig& config) : m_config{ config } {}
 
     // Application interface
     void onCreate(const FIX::SessionID&) override;
@@ -44,7 +44,7 @@ public:
 private:
     FIX::SessionID m_sessionID;
     bool m_loggedOn = false;
-    SimpleConfig m_config;
+    const SimpleConfig& m_config;
 
     // Overloaded onMessage
     void onMessage(const FIX44::MarketDataRequest&, const FIX::SessionID&);

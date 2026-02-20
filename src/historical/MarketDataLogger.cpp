@@ -17,7 +17,7 @@ MarketDataLogger::~MarketDataLogger() {
     closeCurrentLogFile();
 }
 
-void MarketDataLogger::writeToLog(const std::string& direction, const FIX::Message& message) {
+void MarketDataLogger::writeToLog(const std::string& direction, const std::string& message) {
     // ATOMIC OPERATION: Hold lock for entire write process
     std::lock_guard<std::mutex> lock(m_logMutex);
 
@@ -27,7 +27,7 @@ void MarketDataLogger::writeToLog(const std::string& direction, const FIX::Messa
 
         if (m_logFile.is_open()) {
             // Write: DIRECTION|RAW_FIX_MESSAGE
-            m_logFile << direction << "|" << message.toString() << std::endl;
+            m_logFile << direction << "|" << message << std::endl;
             m_logFile.flush();  // Ensure immediate write
         }
     }

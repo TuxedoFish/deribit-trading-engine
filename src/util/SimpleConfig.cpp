@@ -66,7 +66,6 @@ bool SimpleConfig::hasKey(const std::string& key) const {
 }
 
 void SimpleConfig::loadFromFile() {
-    std::cout << "Loading configuration from: " << config_file_path_ << std::endl; 
     std::ifstream file(config_file_path_);
     if (!file.is_open()) {
         std::cerr << "Cannot open configuration file: " + config_file_path_ << std::endl;

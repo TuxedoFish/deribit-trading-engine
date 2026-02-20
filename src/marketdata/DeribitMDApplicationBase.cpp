@@ -1,27 +1,27 @@
-#include "../../include/marketdata/MDApplicationBase.h"
+#include "../../include/marketdata/DeribitMDApplicationBase.h"
 
 #include "../../include/fix/FIXCustomTags.h"
 
-void MDApplicationBase::onCreate(const FIX::SessionID& sessionID)
+void DeribitApplicationBase::onCreate(const FIX::SessionID& sessionID)
 {
     std::cout << "Session created: " << sessionID << std::endl;
     m_sessionID = sessionID;
 }
 
-void MDApplicationBase::onLogon(const FIX::SessionID& sessionID)
+void DeribitApplicationBase::onLogon(const FIX::SessionID& sessionID)
 {
     std::cout << "Logged on to Deribit: " << sessionID << std::endl;
     m_loggedOn = true;
     getSymbols();
 }
 
-void MDApplicationBase::onLogout(const FIX::SessionID& sessionID)
+void DeribitApplicationBase::onLogout(const FIX::SessionID& sessionID)
 {
     std::cout << "Logged out from Deribit: " << sessionID << std::endl;
     m_loggedOn = false;
 }
 
-void MDApplicationBase::toAdmin(FIX::Message& message, const FIX::SessionID& sessionID)
+void DeribitApplicationBase::toAdmin(FIX::Message& message, const FIX::SessionID& sessionID)
 {
     // Add authentication for logon messages
     FIX::MsgType msgType;
@@ -33,23 +33,23 @@ void MDApplicationBase::toAdmin(FIX::Message& message, const FIX::SessionID& ses
     }
 }
 
-void MDApplicationBase::toApp(FIX::Message& message, const FIX::SessionID& sessionID) noexcept
+void DeribitApplicationBase::toApp(FIX::Message& message, const FIX::SessionID& sessionID) noexcept
 {
     FixUtils::logFixMessage("Sending: ", message);
 }
 
-void MDApplicationBase::fromAdmin(const FIX::Message& message, const FIX::SessionID& sessionID) noexcept
+void DeribitApplicationBase::fromAdmin(const FIX::Message& message, const FIX::SessionID& sessionID) noexcept
 {
     FixUtils::logFixMessage("Received admin: ", message);
 }
 
-void MDApplicationBase::fromApp(const FIX::Message& message, const FIX::SessionID& sessionID) noexcept
+void DeribitApplicationBase::fromApp(const FIX::Message& message, const FIX::SessionID& sessionID) noexcept
 {    
     // This automatically calls down to the corresponding onMessage implementation
     crack(message, sessionID);
 }
 
-void MDApplicationBase::getSymbols()
+void DeribitApplicationBase::getSymbols()
 {
     // Create SecurityListRequest message
     FIX::Message secListRequest;
@@ -79,7 +79,7 @@ void MDApplicationBase::getSymbols()
     }
 }
 
-void MDApplicationBase::subscribe(std::string symbols[], int nSymbols)
+void DeribitApplicationBase::subscribe(std::string symbols[], int nSymbols)
 {
     // Create market data request with default constructor
     FIX44::MarketDataRequest mdRequest;
@@ -122,22 +122,22 @@ void MDApplicationBase::subscribe(std::string symbols[], int nSymbols)
     FIX::Session::sendToTarget(mdRequest, m_sessionID);
 }
 
-void MDApplicationBase::onMessage(const FIX44::MarketDataRequest& message, const FIX::SessionID& sessionID) {
+void DeribitApplicationBase::onMessage(const FIX44::MarketDataRequest& message, const FIX::SessionID& sessionID) {
 }
 
-void MDApplicationBase::onMessage(const FIX44::MarketDataRequestReject& message, const FIX::SessionID& sessionID) {
+void DeribitApplicationBase::onMessage(const FIX44::MarketDataRequestReject& message, const FIX::SessionID& sessionID) {
 }
 
-void MDApplicationBase::onMessage(const FIX44::MarketDataSnapshotFullRefresh& message, const FIX::SessionID& sessionID) {
+void DeribitApplicationBase::onMessage(const FIX44::MarketDataSnapshotFullRefresh& message, const FIX::SessionID& sessionID) {
     FIX::Symbol symbol;
     message.get(symbol);
     std::cout << "Received MarketDataSnapshotFullRefresh for: " << symbol.getValue() << std::endl;
 }
 
-void MDApplicationBase::onMessage(const FIX44::MarketDataIncrementalRefresh& message, const FIX::SessionID& sessionID) {
+void DeribitApplicationBase::onMessage(const FIX44::MarketDataIncrementalRefresh& message, const FIX::SessionID& sessionID) {
 }
 
-void MDApplicationBase::onMessage(const FIX44::SecurityList& message, const FIX::SessionID& sessionID) {
+void DeribitApplicationBase::onMessage(const FIX44::SecurityList& message, const FIX::SessionID& sessionID) {
     FixUtils::logFixMessage("Received SecurityList: ", message);
 
     FIX::NoRelatedSym noSecuritiesField;
@@ -159,6 +159,6 @@ void MDApplicationBase::onMessage(const FIX44::SecurityList& message, const FIX:
         std::cout << symbols[i] << ", ";
     }
     std::cout << std::endl;
-    MDApplicationBase::subscribe(symbols, noSecurities);
+    subscribe(symbols, noSecurities);
 }
 

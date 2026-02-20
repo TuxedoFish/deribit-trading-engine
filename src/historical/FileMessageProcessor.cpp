@@ -1,6 +1,6 @@
 #include "../../include/historical/FileMessageProcessor.h"
 
-FileMessageProcessor::FileMessageProcessor(const std::string& dataDictionaryFilePath, MessageProcessor& messageProcessor, SBEBinaryWriter& writer) :
+FileMessageProcessor::FileMessageProcessor(const std::string& dataDictionaryFilePath, DeribitMessageProcessor& messageProcessor, SBEBinaryWriter& writer) :
     m_dataDictionary(dataDictionaryFilePath), m_writer(writer), m_processor(messageProcessor) {
 }
 

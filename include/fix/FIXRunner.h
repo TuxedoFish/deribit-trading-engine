@@ -14,7 +14,7 @@
 class FIXRunner
 {
 public:
-    explicit FIXRunner(const SimpleConfig& config);
+    explicit FIXRunner(SimpleConfig& config);
     ~FIXRunner() = default;
 
     int run(FIX::Application& application, const std::string& startupMessage);
@@ -25,5 +25,5 @@ public:
     static void waitForUserInput();
 
 private:
-    const SimpleConfig& config_;
+    SimpleConfig& config_;
 };

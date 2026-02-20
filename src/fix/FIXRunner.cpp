@@ -1,6 +1,6 @@
 #include "../../include/fix/FIXRunner.h"
 
-FIXRunner::FIXRunner(const SimpleConfig& config) : config_(config)
+FIXRunner::FIXRunner(SimpleConfig& config) : config_(config)
 {
 }
 

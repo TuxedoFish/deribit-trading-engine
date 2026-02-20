@@ -52,7 +52,7 @@ public:
 private:
     FIX::SessionID m_sessionID;
     bool m_loggedOn = false;
-    SimpleConfig m_config;
+    SimpleConfig& m_config;
     RefDataHolder& m_refDataHolder;
     SBEBinaryWriter& m_sbeWriter;
 

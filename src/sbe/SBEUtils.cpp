@@ -6,9 +6,16 @@
 
 using namespace com::liversedge::messages;
 
-int64_t stringToMantissa(const std::string& str, int8_t exponent = -4)
+int64_t SBEUtils::stringToMantissa(const std::string& str, int8_t exponent)
 {
     Dec value(str);
+    Dec scale = pow(Dec(10), -exponent);
+    return static_cast<int64_t>(value * scale);
+}
+
+int64_t SBEUtils::powerOfTenMantissa(int decimals, int8_t exponent)
+{
+    Dec value = pow(Dec(10), -decimals);
     Dec scale = pow(Dec(10), -exponent);
     return static_cast<int64_t>(value * scale);
 }

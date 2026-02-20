@@ -1,6 +1,6 @@
 #include "../../include/historical/MarketdataHistoricalRunner.h"
 
-MarketdataHistoricalRunner::MarketdataHistoricalRunner(const SimpleConfig& config) : config_{ config } {
+MarketdataHistoricalRunner::MarketdataHistoricalRunner(SimpleConfig& config) : config_{ config } {
 }
 
 std::string MarketdataHistoricalRunner::getMonthDayString(int dayOrMonth) {
@@ -125,7 +125,7 @@ int MarketdataHistoricalRunner::run() {
     tm endDate = DateUtils::getDateFromString(endDateStr);
     tm currentDate = startDate;
     SBEBinaryWriter writer{};
-    MessageProcessor processor{ writer };
+    DeribitMessageProcessor processor{ writer };
     FileMessageProcessor historicalProcessor{ dataDictionaryLoc, processor, writer };
 
     if (!config_.getBool("from_start"))
