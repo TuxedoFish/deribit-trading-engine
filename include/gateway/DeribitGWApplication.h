@@ -1,5 +1,4 @@
-#ifndef APPLICATION_H
-#define APPLICATION_H
+# pragma once
 
 #include "quickfix/Application.h"
 #include "quickfix/MessageCracker.h"
@@ -9,6 +8,10 @@
 #include "quickfix/fix44/MarketDataRequest.h"
 #include "quickfix/fix44/MarketDataSnapshotFullRefresh.h"
 #include "quickfix/fix44/SecurityList.h"
+#include "quickfix/fix44/OrderCancelReject.h"
+#include "quickfix/fix44/ExecutionReport.h"
+#include "../../generated/com_liversedge_messages/ExecutionReport.h"
+#include "../../generated/com_liversedge_messages/OrderCancelReject.h"
 #include <iostream>
 #include <chrono>
 #include <string>
@@ -20,13 +23,18 @@
 #include "../historical/MarketDataLogger.h"
 #include "../util/SimpleConfig.h"
 #include "../fix/FIXUtils.h"
+#include "../sbe/SBEBinaryWriter.h"
+#include "../sbe/SBEUtils.h"
+#include "RefDataHolder.h"
+#include "./DeribitMessageConverter.h"
 
 using encoding_t = unsigned char const*;
 
-class MDApplicationBase : public FIX::Application, public FIX::MessageCracker
+class DeribitGWApplication : public FIX::Application, public FIX::MessageCracker
 {
 public:
-    MDApplicationBase(SimpleConfig& config) : m_config{ config } {}
+    DeribitGWApplication(SimpleConfig& config, RefDataHolder& refDataHolder, SBEBinaryWriter& sbeWriter);
+    ~DeribitGWApplication() = default;
 
     // Application interface
     void onCreate(const FIX::SessionID&) override;
@@ -37,22 +45,19 @@ public:
     void fromAdmin(const FIX::Message&, const FIX::SessionID&) noexcept;
     void fromApp(const FIX::Message&, const FIX::SessionID&) noexcept;
 
-    // Deribit marketdata functionality
-    void subscribe(std::string[], int);
-    void getSymbols();
+    // Message sending interface for OrdersHandler
+    bool sendMessage(FIX::Message& message);
+    bool isLoggedOn() const { return m_loggedOn; }
 
 private:
     FIX::SessionID m_sessionID;
     bool m_loggedOn = false;
-    SimpleConfig m_config;
+    SimpleConfig& m_config;
+    RefDataHolder& m_refDataHolder;
+    SBEBinaryWriter& m_sbeWriter;
 
     // Overloaded onMessage
-    void onMessage(const FIX44::MarketDataRequest&, const FIX::SessionID&);
-    void onMessage(const FIX44::MarketDataRequestReject&, const FIX::SessionID&);
-    void onMessage(const FIX44::MarketDataSnapshotFullRefresh&, const FIX::SessionID&);
-    void onMessage(const FIX44::MarketDataIncrementalRefresh&, const FIX::SessionID&);
-    void onMessage(const FIX44::SecurityList&, const FIX::SessionID&);
+    void onMessage(const FIX44::OrderCancelReject&, const FIX::SessionID&);
+    void onMessage(const FIX44::ExecutionReport&, const FIX::SessionID&);
 
 };
-
-#endif

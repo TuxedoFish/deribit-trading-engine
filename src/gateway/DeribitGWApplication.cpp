@@ -1,29 +1,30 @@
-#include "../../include/gateway/GWApplication.h"
+#include "../../include/gateway/DeribitGWApplication.h"
+#include <spdlog/spdlog.h>
 
-GWApplication::GWApplication(SimpleConfig& config, RefDataHolder& refDataHolder, SBEBinaryWriter& sbeWriter)
+DeribitGWApplication::DeribitGWApplication(SimpleConfig& config, RefDataHolder& refDataHolder, SBEBinaryWriter& sbeWriter)
     : m_config(config), m_refDataHolder(refDataHolder), m_sbeWriter(sbeWriter)
 {
 }
 
-void GWApplication::onCreate(const FIX::SessionID& sessionID)
+void DeribitGWApplication::onCreate(const FIX::SessionID& sessionID)
 {
-    std::cout << "Session created: " << sessionID << std::endl;
+    spdlog::info("Session created: {}", sessionID.toString());
     m_sessionID = sessionID;
 }
 
-void GWApplication::onLogon(const FIX::SessionID& sessionID)
+void DeribitGWApplication::onLogon(const FIX::SessionID& sessionID)
 {
-    std::cout << "Logged on to Deribit: " << sessionID << std::endl;
+    spdlog::info("Logged on to Deribit: {}", sessionID.toString());
     m_loggedOn = true;
 }
 
-void GWApplication::onLogout(const FIX::SessionID& sessionID)
+void DeribitGWApplication::onLogout(const FIX::SessionID& sessionID)
 {
-    std::cout << "Logged out from Deribit: " << sessionID << std::endl;
+    spdlog::info("Logged out from Deribit: {}", sessionID.toString());
     m_loggedOn = false;
 }
 
-void GWApplication::toAdmin(FIX::Message& message, const FIX::SessionID& sessionID)
+void DeribitGWApplication::toAdmin(FIX::Message& message, const FIX::SessionID& sessionID)
 {
     // Add authentication for logon messages
     FIX::MsgType msgType;
@@ -35,35 +36,35 @@ void GWApplication::toAdmin(FIX::Message& message, const FIX::SessionID& session
     }
 }
 
-void GWApplication::toApp(FIX::Message& message, const FIX::SessionID& sessionID) noexcept
+void DeribitGWApplication::toApp(FIX::Message& message, const FIX::SessionID& sessionID) noexcept
 {
     FixUtils::logFixMessage("Sending: ", message);
 }
 
-void GWApplication::fromAdmin(const FIX::Message& message, const FIX::SessionID& sessionID) noexcept
+void DeribitGWApplication::fromAdmin(const FIX::Message& message, const FIX::SessionID& sessionID) noexcept
 {
     FixUtils::logFixMessage("Received admin: ", message);
 }
 
-void GWApplication::fromApp(const FIX::Message& message, const FIX::SessionID& sessionID) noexcept
+void DeribitGWApplication::fromApp(const FIX::Message& message, const FIX::SessionID& sessionID) noexcept
 {    
     // This automatically calls down to the corresponding onMessage implementation
     crack(message, sessionID);
 }
 
 
-void GWApplication::onMessage(const FIX44::OrderCancelReject& message, const FIX::SessionID& sessionID) {
+void DeribitGWApplication::onMessage(const FIX44::OrderCancelReject& message, const FIX::SessionID& sessionID) {
     FixUtils::logFixMessage("Received OrderCancelReject: ", message);
 
     com::liversedge::messages::OrderCancelReject sbeReject;
     if (m_sbeWriter.prepareMessage(sbeReject)) {
         DeribitMessageConverter::convertOrderCancelReject(message, sbeReject, m_refDataHolder);
         m_sbeWriter.writeMessage(sbeReject);
-        std::cout << "Sent SBE: " << sbeReject << std::endl;
+        spdlog::info("Sent SBE OrderCancelReject");
     }
 }
 
-void GWApplication::onMessage(const FIX44::ExecutionReport& message, const FIX::SessionID& sessionID)
+void DeribitGWApplication::onMessage(const FIX44::ExecutionReport& message, const FIX::SessionID& sessionID)
 {
     FixUtils::logFixMessage("Received ExecutionReport: ", message);
 
@@ -72,14 +73,14 @@ void GWApplication::onMessage(const FIX44::ExecutionReport& message, const FIX::
     {
         DeribitMessageConverter::convertExecutionReport(message, sbeExecReport, m_refDataHolder);
         m_sbeWriter.writeMessage(sbeExecReport);
-        std::cout << "Sent SBE: " << sbeExecReport << std::endl;
+        spdlog::info("Sent SBE ExecutionReport");
     }
 }
 
-bool GWApplication::sendMessage(FIX::Message& message)
+bool DeribitGWApplication::sendMessage(FIX::Message& message)
 {
     if (!m_loggedOn) {
-        std::cout << "Cannot send message: not logged on" << std::endl;
+        spdlog::error("Cannot send message: not logged on");
         return false;
     }
 
@@ -87,7 +88,7 @@ bool GWApplication::sendMessage(FIX::Message& message)
         FIX::Session::sendToTarget(message, m_sessionID);
         return true;
     } catch (const std::exception& e) {
-        std::cout << "Failed to send message: " << e.what() << std::endl;
+        spdlog::error("Failed to send message: {}", e.what());
         return false;
     }
 }

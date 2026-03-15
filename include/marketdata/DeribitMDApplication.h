@@ -1,13 +1,13 @@
 # pragma once
 
-#include "MDApplicationBase.h"
-#include "MessageProcessor.h"
+#include "DeribitMDApplicationBase.h"
+#include "DeribitMessageProcessor.h"
 
-class MDApplication : public MDApplicationBase
+class DeribitApplication : public DeribitApplicationBase
 {
 public:
-    explicit MDApplication(SimpleConfig& config);
-    virtual ~MDApplication() = default;
+    explicit DeribitApplication(const SimpleConfig& config);
+    virtual ~DeribitApplication() = default;
 
     // Override FIX::Application interface to pass to processor
     void fromAdmin(const FIX::Message& message, const FIX::SessionID& sessionID) noexcept override;
@@ -15,5 +15,5 @@ public:
 
 private:
     SBEBinaryWriter m_writer;
-    MessageProcessor m_processor;
+    DeribitMessageProcessor m_processor;
 };

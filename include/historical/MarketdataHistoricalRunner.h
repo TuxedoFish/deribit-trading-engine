@@ -11,17 +11,17 @@
 #include "../util/SimpleConfig.h"
 #include "FileMessageProcessor.h"
 #include "../sbe/SBEBinaryWriter.h"
-#include "../marketdata/MessageProcessor.h"
+#include "../marketdata/DeribitMessageProcessor.h"
 #include "../util/DateUtils.h"
 
 class MarketdataHistoricalRunner
 {
 public:
-    explicit MarketdataHistoricalRunner(const SimpleConfig& config);
+    explicit MarketdataHistoricalRunner(SimpleConfig& config);
     int run();
 
 private:
-    SimpleConfig config_;
+    SimpleConfig& config_;
 
     std::string getMonthDayString(int dayOrMonth);
     std::string findValidFilePath(const std::string& rawFixCapturesLoc, tm& currentDate);

@@ -4,12 +4,12 @@
 #include <exception>
 #include "quickfix/Application.h"
 #include "../sbe/SBEBinaryWriter.h"
-#include "../marketdata/MessageProcessor.h"
+#include "../marketdata/DeribitMessageProcessor.h"
 
 class FileMessageProcessor
 {
 public:
-    explicit FileMessageProcessor(const std::string&, MessageProcessor&, SBEBinaryWriter&);
+    explicit FileMessageProcessor(const std::string&, DeribitMessageProcessor&, SBEBinaryWriter&);
     virtual ~FileMessageProcessor() = default;
 
     void process(std::string);
@@ -21,5 +21,5 @@ private:
     bool m_sessionInitialized = false;
     FIX::DataDictionary m_dataDictionary;
     SBEBinaryWriter& m_writer;
-    MessageProcessor& m_processor;
+    DeribitMessageProcessor& m_processor;
 };

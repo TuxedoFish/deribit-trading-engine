@@ -1,0 +1,21 @@
+#pragma once
+
+#include "HyperliquidMDApplicationBase.h"
+#include "HyperliquidMessageProcessor.h"
+
+class HyperliquidMDApplication : public HyperliquidMDApplicationBase
+{
+public:
+    explicit HyperliquidMDApplication(const SimpleConfig& config);
+    virtual ~HyperliquidMDApplication() = default;
+
+    void onConnected() override;
+    void onDisconnected(bool hasError, const std::string& errMsg) override;
+    void onMeta(const hyperliquid::MetaResponse& response) override;
+    void onL2BookLevel(const hyperliquid::L2BookUpdate& book, const hyperliquid::PriceLevel& level) override;
+    void onTrade(const hyperliquid::Trade& trade) override;
+
+private:
+    SBEBinaryWriter m_writer;
+    HyperliquidMessageProcessor m_processor;
+};

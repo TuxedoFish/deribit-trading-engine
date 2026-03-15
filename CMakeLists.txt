@@ -9,9 +9,9 @@ if (POLICY CMP0141)
     set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif ()
 
-project("deribit-trading-engine")
+project("exchange-gateways")
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 23)
 
 # Define generated files
 set(GENERATED_DIR ${CMAKE_SOURCE_DIR}/generated)
@@ -45,10 +45,14 @@ set(MAIN_SOURCES
 )
 
 set(FIX_SOURCES
-        include/marketdata/MDApplicationBase.h
-        src/marketdata/MDApplicationBase.cpp
-        include/marketdata/MDApplication.h
-        src/marketdata/MDApplication.cpp
+        include/marketdata/DeribitMDApplicationBase.h
+        src/marketdata/DeribitMDApplicationBase.cpp
+        include/marketdata/HyperliquidMDApplicationBase.h
+        src/marketdata/HyperliquidMDApplicationBase.cpp
+        include/marketdata/HyperliquidMDApplication.h
+        src/marketdata/HyperliquidMDApplication.cpp
+        include/marketdata/DeribitMDApplication.h
+        src/marketdata/DeribitMDApplication.cpp
         include/fix/FIXRunner.h
         src/fix/FIXRunner.cpp
         include/fix/FIXCustomTags.h
@@ -57,16 +61,20 @@ set(FIX_SOURCES
 )
 
 set(GATEWAY_SOURCES
-        include/gateway/GWApplication.h
-        src/gateway/GWApplication.cpp
+        include/gateway/DeribitGWApplication.h
+        src/gateway/DeribitGWApplication.cpp
         include/gateway/GWRunner.h
         src/gateway/GWRunner.cpp
         include/gateway/SecurityInfo.h
         src/gateway/SecurityInfo.cpp
         include/gateway/RefDataHolder.h
         src/gateway/RefDataHolder.cpp
-        include/gateway/OrdersHandler.h
-        src/gateway/OrdersHandler.cpp
+        include/gateway/DeribitOrdersHandler.h
+        src/gateway/DeribitOrdersHandler.cpp
+        include/gateway/HyperliquidOrdersHandler.h
+        src/gateway/HyperliquidOrdersHandler.cpp
+        include/gateway/HyperliquidGWApplication.h
+        src/gateway/HyperliquidGWApplication.cpp
         include/gateway/DeribitMessageConverter.h
         src/gateway/DeribitMessageConverter.cpp
 )
@@ -89,6 +97,10 @@ set(MARKETDATA_SOURCES
         src/historical/MarketDataLogger.cpp
         include/marketdata/MessageProcessor.h
         src/marketdata/MessageProcessor.cpp
+        include/marketdata/DeribitMessageProcessor.h
+        src/marketdata/DeribitMessageProcessor.cpp
+        include/marketdata/HyperliquidMessageProcessor.h
+        src/marketdata/HyperliquidMessageProcessor.cpp
         include/sbe/SBEBinaryWriter.h
         src/sbe/SBEBinaryWriter.cpp
         include/sbe/SBEMessageListener.h
@@ -97,8 +109,10 @@ set(MARKETDATA_SOURCES
 )
 
 set(HISTORICAL_SOURCES
-        include/historical/ApplicationPersister.h
-        src/historical/ApplicationPersister.cpp
+        include/historical/DeribitPersister.h
+        src/historical/DeribitPersister.cpp
+        include/historical/HyperliquidPersister.h
+        src/historical/HyperliquidPersister.cpp
         include/historical/FileMessageProcessor.h
         src/historical/FileMessageProcessor.cpp
         include/historical/MarketdataHistoricalRunner.h
@@ -106,7 +120,7 @@ set(HISTORICAL_SOURCES
 )
 
 # Add source to this project's executable.
-add_executable(deribit-trading-engine
+add_executable(gateways
         ${MAIN_SOURCES}
         ${FIX_SOURCES}
         ${GATEWAY_SOURCES}
@@ -115,33 +129,37 @@ add_executable(deribit-trading-engine
         ${HISTORICAL_SOURCES}
 )
 
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-    set_property(TARGET deribit-trading-engine PROPERTY CXX_STANDARD 14)
-endif ()
-
 # Dependencies
 find_package(OpenSSL REQUIRED)
-find_package(quickfix CONFIG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS iostreams filesystem system)
+find_package(spdlog CONFIG REQUIRED)
+IF (Boost_FOUND)
+    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+    ADD_DEFINITIONS( "-DHAS_BOOST" )
+ENDIF()
+include(third_party/quickfix.cmake)
+add_subdirectory("third_party/hyperliquid-sdk-cpp" EXCLUDE_FROM_ALL)
 
 if (WIN32)
-    target_link_libraries(deribit-trading-engine
+    target_link_libraries(gateways
             ws2_32 wsock32 winmm crypt32 secur32
     )
 elseif (UNIX)
-    target_link_libraries(deribit-trading-engine
+    target_link_libraries(gateways
             pthread dl
     )
 endif ()
 
-target_link_libraries(deribit-trading-engine
-        ${OPENSSL_LIBRARIES} quickfix
+target_link_libraries(gateways
+        quickfix hyperliquid-sdk
+        ${OPENSSL_LIBRARIES}
         Boost::iostreams Boost::filesystem Boost::system
+        spdlog::spdlog
 )
 
 # Generated code
-target_include_directories(deribit-trading-engine PRIVATE
+target_include_directories(gateways PRIVATE
         ${CMAKE_SOURCE_DIR}/generated
 )
 
-add_dependencies(deribit-trading-engine generate_sbe_code)
+add_dependencies(gateways generate_sbe_code)
