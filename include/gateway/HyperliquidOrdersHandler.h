@@ -8,20 +8,17 @@
 #include "quickfix/fix44/OrderCancelRequest.h"
 #include "quickfix/fix44/OrderCancelReplaceRequest.h"
 #include "quickfix/Fields.h"
-#include "../../include/gateway/GWApplication.h"
+#include "../../include/gateway/DeribitGWApplication.h"
 #include "../../include/gateway/DeribitMessageConverter.h"
 #include "../../include/sbe/SBEUtils.h"
 #include "../../include/fix/FIXCustomTags.h"
 #include <iostream>
 
-// Forward declaration to avoid circular dependency
-class GWApplication;
-
-class OrdersHandler : public SBEMessageListener
+class HyperliquidOrdersHandler: public SBEMessageListener
 {
 public:
-    explicit OrdersHandler(RefDataHolder& refDataHolder, GWApplication& gwApplication, SBEBinaryWriter& sbeWriter);
-    ~OrdersHandler() = default;
+    explicit HyperliquidOrdersHandler(RefDataHolder& refDataHolder, SBEBinaryWriter& sbeWriter);
+    ~HyperliquidOrdersHandler() = default;
 
     // SBEMessageListener implementation
     void onConnectionStatus(com::liversedge::messages::ConnectionStatus& decoder, std::uint64_t timestamp) override {}
@@ -42,7 +39,6 @@ public:
 private:
     bool m_isReplay = false;
     RefDataHolder& m_refDataHolder;
-    GWApplication& m_gwApplication;
     SBEBinaryWriter& m_sbeWriter;
 
     void sendCancelReject(com::liversedge::messages::CancelOrder& cancelOrder);

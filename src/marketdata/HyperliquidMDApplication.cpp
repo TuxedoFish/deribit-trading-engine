@@ -16,13 +16,21 @@ void HyperliquidMDApplication::onConnected() {
     HyperliquidMDApplicationBase::onConnected();
 }
 
-void HyperliquidMDApplication::onDisconnected() {
-    m_processor.onDisconnected();
-    HyperliquidMDApplicationBase::onDisconnected();
+void HyperliquidMDApplication::onDisconnected(bool hasError, const std::string& errMsg) {
+    if (hasError)
+    {
+        std::cout << "Disconnected: " << errMsg << std::endl;
+    } else
+    {
+        std::cout << "Disconnected." << std::endl;
+    }
+    m_processor.onDisconnected(hasError, errMsg);
+    HyperliquidMDApplicationBase::onDisconnected(hasError, errMsg);
 }
 
 // hyperliquid::InfoEndpointListener
 void HyperliquidMDApplication::onMeta(const hyperliquid::MetaResponse& response) {
+    m_processor.setDesiredCoins(m_desiredCoins);
     m_processor.onMeta(response);
     HyperliquidMDApplicationBase::onMeta(response);
 }

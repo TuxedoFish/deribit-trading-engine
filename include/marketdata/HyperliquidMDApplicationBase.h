@@ -31,7 +31,7 @@ public:
     // hyperliquid::WebsocketListener
     virtual void onMessage(const std::string& message) override;
     virtual void onConnected() override;
-    virtual void onDisconnected() override;
+    virtual void onDisconnected(bool hasError, const std::string& errMsg) override;
 
     // hyperliquid::RestListener
     virtual void onMessage(const std::string& message, hyperliquid::InfoEndpointType type) override;
@@ -46,6 +46,8 @@ protected:
     std::vector<hyperliquid::AssetMeta> m_universe;
 
 private:
+    static hyperliquid::Environment getEnvironment(std::string envName);
+
     std::unique_ptr<hyperliquid::MarketData> m_marketData;
     std::unique_ptr<hyperliquid::InfoApi> m_infoApi;
     hyperliquid::RestMessageParser m_restParser;

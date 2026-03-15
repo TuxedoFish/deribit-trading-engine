@@ -110,7 +110,7 @@ void MarketdataHistoricalRunner::logProgress(size_t processedLines, size_t total
 
 int MarketdataHistoricalRunner::run() {
     // Fetch configuration
-    const std::string rawFixCapturesLoc = config_.getString("md_raw_fix_file_path");
+    const std::string rawFixCapturesLoc = config_.getString("md_raw_file_path");
     const std::string processedCapturesLoc = config_.getString("md_processed_file_path");
     const std::string dataDictionaryLoc = config_.getString("data_dictionary_file_path");
     const std::string startDateStr = config_.getString("start_date", "");

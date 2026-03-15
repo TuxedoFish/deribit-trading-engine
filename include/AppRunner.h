@@ -13,11 +13,12 @@
 #include <filesystem>
 #include "marketdata/DeribitMDApplicationBase.h"
 #include "marketdata/DeribitMDApplication.h"
-#include "gateway/GWApplication.h"
+#include "gateway/DeribitGWApplication.h"
 #include "gateway/GWRunner.h"
 #include "util/SimpleConfig.h"
 #include "historical/DeribitPersister.h"
 #include "historical/HyperliquidPersister.h"
+#include "gateway/HyperliquidOrdersHandler.h"
 #include "util/CmdLineOptions.h"
 #include "util/NullLogFactory.h"
 #include "marketdata/DeribitMessageProcessor.h"

@@ -1,4 +1,5 @@
 #include "../../include/fix/FIXRunner.h"
+#include "../../include/util/ConsoleUtils.h"
 
 FIXRunner::FIXRunner(SimpleConfig& config) : config_(config)
 {
@@ -6,7 +7,7 @@ FIXRunner::FIXRunner(SimpleConfig& config) : config_(config)
 
 int FIXRunner::run(FIX::Application& application, const std::string& startupMessage)
 {
-    return run(application, startupMessage, waitForUserInput, false);
+    return run(application, startupMessage, ConsoleUtils::waitForUserInput, false);
 }
 
 int FIXRunner::run(FIX::Application& application, const std::string& startupMessage, std::function<void()> mainLoop,
@@ -56,18 +57,3 @@ void FIXRunner::runWithInitiator(std::function<void()> mainLoop, FIX::ThreadedSS
     initiator.stop();
 }
 
-void FIXRunner::waitForUserInput()
-{
-    while (true)
-    {
-        std::string value;
-        std::cin >> value;
-
-        if (value == "q")
-        {
-            break;
-        }
-
-        std::cout << std::endl;
-    }
-}

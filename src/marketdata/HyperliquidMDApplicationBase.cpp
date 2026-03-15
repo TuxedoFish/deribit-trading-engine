@@ -16,11 +16,13 @@ void HyperliquidMDApplicationBase::start()
         m_desiredCoins.insert(coin);
     }
 
+    hyperliquid::Environment environment = getEnvironment(m_config.getString("environment"));
+
     // Start info API (RAII — thread starts in constructor)
-    m_infoApi = std::make_unique<hyperliquid::InfoApi>(hyperliquid::Environment::Mainnet, *this);
+    m_infoApi = std::make_unique<hyperliquid::InfoApi>(environment, *this);
 
     // Start market data websocket (reconnection with backoff is handled by the SDK)
-    m_marketData = std::make_unique<hyperliquid::MarketData>(hyperliquid::Environment::Mainnet, *this);
+    m_marketData = std::make_unique<hyperliquid::MarketData>(environment, *this);
     m_marketData->start();
 }
 
@@ -35,7 +37,9 @@ void HyperliquidMDApplicationBase::stop()
 
 void HyperliquidMDApplicationBase::subscribeToMarket(const std::string& coin)
 {
+    // Snapshots / TOB / Trades
     m_marketData->subscribe(hyperliquid::SubscriptionType::L2Book, {{"coin", coin}});
+    m_marketData->subscribe(hyperliquid::SubscriptionType::Bbo, {{"coin", coin}});
     m_marketData->subscribe(hyperliquid::SubscriptionType::Trades, {{"coin", coin}});
 }
 
@@ -50,7 +54,7 @@ void HyperliquidMDApplicationBase::onConnected() {
     m_infoApi->sendRequest(hyperliquid::InfoEndpointType::Meta, {{"dex", "xyz"}}); // XYZ DEX (Tokenized equities)
 }
 
-void HyperliquidMDApplicationBase::onDisconnected() {
+void HyperliquidMDApplicationBase::onDisconnected(bool hasError, const std::string& errMsg) {
 }
 
 // hyperliquid::RestListener — parse and dispatch to typed callbacks
@@ -68,8 +72,23 @@ void HyperliquidMDApplicationBase::onMeta(const hyperliquid::MetaResponse& respo
     {
         if (m_desiredCoins.find(coin.name) != m_desiredCoins.end())
         {
-            std::cout << "Subscribing to " << coin.name << std::endl;
             subscribeToMarket(coin.name);
         }
+    }
+}
+
+hyperliquid::Environment HyperliquidMDApplicationBase::getEnvironment(std::string envName)
+{
+    if (envName == "prod")
+    {
+        return hyperliquid::Environment::Mainnet;
+    }
+    else if (envName == "testnet")
+    {
+        return hyperliquid::Environment::Testnet;
+    }
+    else
+    {
+        throw std::runtime_error("Unrecognized environment: " + envName);
     }
 }

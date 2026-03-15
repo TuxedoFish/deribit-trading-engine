@@ -1,16 +1,16 @@
-#include "../../include/gateway/OrdersHandler.h"
+#include "../../include/gateway/DeribitOrdersHandler.h"
 
-OrdersHandler::OrdersHandler(RefDataHolder& refDataHolder, GWApplication& gwApplication, SBEBinaryWriter& sbeWriter)
+DeribitOrdersHandler::DeribitOrdersHandler(RefDataHolder& refDataHolder, DeribitGWApplication& gwApplication, SBEBinaryWriter& sbeWriter)
     : m_refDataHolder(refDataHolder), m_gwApplication(gwApplication), m_sbeWriter(sbeWriter)
 {
 }
 
-void OrdersHandler::onSecurityDefinition(com::liversedge::messages::SecurityDefinition& decoder, std::uint64_t timestamp)
+void DeribitOrdersHandler::onSecurityDefinition(com::liversedge::messages::SecurityDefinition& decoder, std::uint64_t timestamp)
 {
     m_refDataHolder.onSecurityDefinition(decoder, timestamp);
 }
 
-void OrdersHandler::onNewOrder(com::liversedge::messages::NewOrder& decoder, std::uint64_t timestamp)
+void DeribitOrdersHandler::onNewOrder(com::liversedge::messages::NewOrder& decoder, std::uint64_t timestamp)
 {
     if (m_isReplay)
     {
@@ -64,7 +64,7 @@ void OrdersHandler::onNewOrder(com::liversedge::messages::NewOrder& decoder, std
     }
 }
 
-void OrdersHandler::onAmendOrder(com::liversedge::messages::AmendOrder& decoder, std::uint64_t timestamp)
+void DeribitOrdersHandler::onAmendOrder(com::liversedge::messages::AmendOrder& decoder, std::uint64_t timestamp)
 {
     if (m_isReplay)
     {
@@ -120,7 +120,7 @@ void OrdersHandler::onAmendOrder(com::liversedge::messages::AmendOrder& decoder,
     }
 }
 
-void OrdersHandler::onCancelOrder(com::liversedge::messages::CancelOrder& decoder, std::uint64_t timestamp)
+void DeribitOrdersHandler::onCancelOrder(com::liversedge::messages::CancelOrder& decoder, std::uint64_t timestamp)
 {
     if (m_isReplay)
     {
@@ -157,7 +157,7 @@ void OrdersHandler::onCancelOrder(com::liversedge::messages::CancelOrder& decode
     }
 }
 
-void OrdersHandler::sendCancelReject(com::liversedge::messages::CancelOrder& cancelOrder)
+void DeribitOrdersHandler::sendCancelReject(com::liversedge::messages::CancelOrder& cancelOrder)
 {
     com::liversedge::messages::OrderCancelReject sbeReject;
     if (m_sbeWriter.prepareMessage(sbeReject)) {
@@ -166,7 +166,7 @@ void OrdersHandler::sendCancelReject(com::liversedge::messages::CancelOrder& can
     }
 }
 
-void OrdersHandler::sendNewOrderReject(com::liversedge::messages::NewOrder& newOrder)
+void DeribitOrdersHandler::sendNewOrderReject(com::liversedge::messages::NewOrder& newOrder)
 {
     com::liversedge::messages::ExecutionReport sbeExecReport;
     if (m_sbeWriter.prepareMessage(sbeExecReport)) {

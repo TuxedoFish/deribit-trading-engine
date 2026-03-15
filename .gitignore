@@ -8,6 +8,7 @@ CMakePresets.json
 # Build
 out/
 generated/
+build/
 
 # Fix
 *.log

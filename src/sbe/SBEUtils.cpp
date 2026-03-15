@@ -24,7 +24,7 @@ int64_t SBEUtils::powerOfTenMantissa(int decimals, int8_t exponent)
 
 void SBEUtils::setQty(Qty& field, const std::string& value)
 {
-    field.mantissa(stringToMantissa(value, -4));
+    field.mantissa(stringToMantissa(value, -8));
 }
 
 void SBEUtils::setPrice(Price& field, const std::string& value)

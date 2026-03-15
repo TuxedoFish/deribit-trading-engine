@@ -58,7 +58,7 @@ public:
 
     // Buffer access helpers
     static std::int64_t getInt64(const char* buffer, std::size_t offset);
-    static int64_t stringToMantissa(const std::string& str, int8_t exponent = -4);
+    static int64_t stringToMantissa(const std::string& str, int8_t exponent = -8);
     static int64_t powerOfTenMantissa(int decimals, int8_t exponent);
 
     // SBE -> Internal

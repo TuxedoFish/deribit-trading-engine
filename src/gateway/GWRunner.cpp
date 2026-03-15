@@ -1,6 +1,6 @@
 #include "../../include/gateway/GWRunner.h"
-#include "../../include/gateway/OrdersHandler.h"
-#include "../../include/gateway/GWApplication.h"
+#include "../../include/gateway/DeribitOrdersHandler.h"
+#include "../../include/gateway/DeribitGWApplication.h"
 #include "../../include/util/SimpleConfig.h"
 #include <boost/filesystem.hpp>
 #include <iostream>
@@ -8,8 +8,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-GWRunner::GWRunner(const SimpleConfig& config, GWApplication& gwApplication, RefDataHolder& refDataHolder, SBEBinaryWriter& sbeWriter)
-    : m_config(config), m_gwApplication(gwApplication), m_refDataHolder(refDataHolder), m_sbeWriter(sbeWriter) {
+GWRunner::GWRunner(const SimpleConfig& config, SBEMessageListener& ordersHandler, RefDataHolder& refDataHolder, SBEBinaryWriter& sbeWriter)
+    : m_config(config), m_ordersHandler(ordersHandler), m_refDataHolder(refDataHolder), m_sbeWriter(sbeWriter) {
     setupPollers();
 }
 
@@ -20,12 +20,12 @@ void GWRunner::run() {
 
     // Replay streams
     std::cout << "Replaying streams..." << std::endl;
-    m_ordersHandler->setIsReplay(true);
+    m_ordersHandler.setIsReplay(true);
     while (m_mdPoller->next()) {
     }
     while (m_gwInPoller->next()) {
     }
-    m_ordersHandler->setIsReplay(false);
+    m_ordersHandler.setIsReplay(false);
     std::cout << "Finished replay." << std::endl;
 
     while (true) {
@@ -53,9 +53,8 @@ void GWRunner::run() {
 }
 
 void GWRunner::setupPollers() {
-    m_ordersHandler = std::make_unique<OrdersHandler>(m_refDataHolder, m_gwApplication, m_sbeWriter);
-    m_mdPoller = createPoller(m_config.getString("md_file_path"), *m_ordersHandler);
-    m_gwInPoller = createPoller(m_config.getString("gw_inbound_file_path"), *m_ordersHandler);
+    m_mdPoller = createPoller(m_config.getString("md_file_path"), m_ordersHandler);
+    m_gwInPoller = createPoller(m_config.getString("gw_inbound_file_path"), m_ordersHandler);
 }
 
 std::unique_ptr<SBEQueuePoller> GWRunner::createPoller(std::string dataDirectory, SBEMessageListener& listener)

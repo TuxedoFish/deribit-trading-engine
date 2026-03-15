@@ -1,7 +1,7 @@
 #include "../../include/historical/DeribitPersister.h"
 
 DeribitPersister::DeribitPersister(SimpleConfig& config)
-    : DeribitApplicationBase(config), m_logger(std::make_unique<MarketDataLogger>(config.getString("md_raw_fix_file_path"))) {
+    : DeribitApplicationBase(config), m_logger(std::make_unique<MarketDataLogger>(config.getString("md_raw_file_path"))) {
 }
 
 void DeribitPersister::toApp(FIX::Message& message, const FIX::SessionID& sessionID) noexcept {

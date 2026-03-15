@@ -1,7 +1,7 @@
 #include "../../include/historical/HyperliquidPersister.h"
 
 HyperliquidPersister::HyperliquidPersister(SimpleConfig& config) : HyperliquidMDApplicationBase(config),
-    m_logger(std::make_unique<MarketDataLogger>(config.getString("md_raw_ws_file_path")))
+    m_logger(std::make_unique<MarketDataLogger>(config.getString("md_raw_file_path")))
 {
 }
 
@@ -24,14 +24,14 @@ void HyperliquidPersister::onConnected()
     HyperliquidMDApplicationBase::onConnected();
 }
 
-void HyperliquidPersister::onDisconnected()
+void HyperliquidPersister::onDisconnected(bool hasError, const std::string& errMsg)
 {
     std::cout << "Disconnected" << std::endl;
     if (m_logger)
     {
         m_logger->writeToLog("IN_APP", R"({"channel": "disconnect"})");
     }
-    HyperliquidMDApplicationBase::onDisconnected();
+    HyperliquidMDApplicationBase::onDisconnected(hasError, errMsg);
 }
 
 // hyperliquid::RestListener

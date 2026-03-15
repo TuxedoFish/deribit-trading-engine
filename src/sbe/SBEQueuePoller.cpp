@@ -20,15 +20,16 @@ void SBEQueuePoller::readFrom(const boost::filesystem::path& filePath, bool live
     m_isLiveMode = liveMode;
 
 
-    if (!boost::filesystem::exists(filePath)) {
+    // If file does not exist or size is 0 - invalid can't poll
+    bool fileExists = boost::filesystem::exists(filePath);
+    if (!fileExists || boost::filesystem::file_size(filePath) == 0) {
         if (!liveMode) {
             throw std::runtime_error("Data file not found: " + filePath.string());
-        } else {
-            // In live mode, file doesn't exist yet - just set up for polling
-            std::cout << "No messages.sbe file found at: " << filePath << std::endl;
-            std::cout << "Will poll for new file creation..." << std::endl;
-            return;
         }
+        // In live mode, file doesn't exist yet - just set up for polling
+        std::cout << "No messages.sbe file found at: " << filePath << std::endl;
+        std::cout << "Will poll for new file creation..." << std::endl;
+        return;
     }
 
     if (initializeFileMapping()) {
@@ -42,8 +43,11 @@ bool SBEQueuePoller::next()
 {
     if (!m_isValid) {
         // In live mode, try to initialize if file becomes available
-        if (m_isLiveMode && !m_currentFilePath.empty() && boost::filesystem::exists(m_currentFilePath)) {
+        if (m_isLiveMode && !m_currentFilePath.empty()
+            && boost::filesystem::exists(m_currentFilePath) \
+            && boost::filesystem::file_size(m_currentFilePath) != 0) {
             if (initializeFileMapping()) {
+                std::cout << "File found, starting to poll: " << m_currentFilePath << std::endl;
                 m_isValid = true;
             } else {
                 return false;
@@ -225,6 +229,7 @@ bool SBEQueuePoller::initializeFileMapping()
     try {
         m_mappedFile = std::make_unique<boost::iostreams::mapped_file_source>(m_currentFilePath.string());
         if (!m_mappedFile->is_open()) {
+            std::cerr << "Failed to open file: " << m_currentFilePath.string() << std::endl;
             return false;
         }
 
@@ -235,6 +240,7 @@ bool SBEQueuePoller::initializeFileMapping()
         return true;
 
     } catch (const std::exception& e) {
+        std::cerr << "Error initializing file mapping: " << e.what() << std::endl;
         closeResources();
         return false;
     }

@@ -61,16 +61,18 @@ set(FIX_SOURCES
 )
 
 set(GATEWAY_SOURCES
-        include/gateway/GWApplication.h
-        src/gateway/GWApplication.cpp
+        include/gateway/DeribitGWApplication.h
+        src/gateway/DeribitGWApplication.cpp
         include/gateway/GWRunner.h
         src/gateway/GWRunner.cpp
         include/gateway/SecurityInfo.h
         src/gateway/SecurityInfo.cpp
         include/gateway/RefDataHolder.h
         src/gateway/RefDataHolder.cpp
-        include/gateway/OrdersHandler.h
-        src/gateway/OrdersHandler.cpp
+        include/gateway/DeribitOrdersHandler.h
+        src/gateway/DeribitOrdersHandler.cpp
+        include/gateway/HyperliquidOrdersHandler.h
+        src/gateway/HyperliquidOrdersHandler.cpp
         include/gateway/DeribitMessageConverter.h
         src/gateway/DeribitMessageConverter.cpp
 )

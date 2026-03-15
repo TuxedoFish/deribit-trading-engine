@@ -21,8 +21,6 @@ public:
     int run(FIX::Application& application, const std::string& startupMessage, std::function<void()> mainLoop, bool logFixMessages);
     void runWithInitiator(std::function<void()> mainLoop, FIX::ThreadedSSLSocketInitiator& initiator);
 
-    // Default main loop implementation
-    static void waitForUserInput();
 
 private:
     SimpleConfig& config_;

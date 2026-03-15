@@ -11,7 +11,7 @@ public:
 
     // hyperliquid::WebsocketListener
     void onConnected() override;
-    void onDisconnected() override;
+    void onDisconnected(bool hasError, const std::string& errMsg) override;
 
     // hyperliquid::InfoEndpointListener
     void onMeta(const hyperliquid::MetaResponse& response) override;
