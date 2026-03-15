@@ -1,0 +1,59 @@
+#pragma once
+
+#include <memory>
+#include <string>
+#include "../util/SimpleConfig.h"
+#include "../sbe/SBEBinaryWriter.h"
+#include "../sbe/SBEUtils.h"
+#include "RefDataHolder.h"
+#include "hyperliquid/websocket/WebsocketApi.h"
+#include "hyperliquid/websocket/WebsocketApiListener.h"
+#include "hyperliquid/websocket/WebsocketMessageHandler.h"
+#include "hyperliquid/websocket/WebsocketMessageParser.h"
+#include "hyperliquid/rest/RestEndpointListener.h"
+#include "hyperliquid/rest/RestApiMessageParser.h"
+#include "../../generated/com_liversedge_messages/ExecutionReport.h"
+#include "../../generated/com_liversedge_messages/OrderCancelReject.h"
+
+class HyperliquidGWApplication : public hyperliquid::WebsocketApiListener,
+                                  public hyperliquid::WebsocketMessageHandler,
+                                  public hyperliquid::RestEndpointListener
+{
+public:
+    HyperliquidGWApplication(SimpleConfig& config, RefDataHolder& refDataHolder, SBEBinaryWriter& sbeWriter);
+    ~HyperliquidGWApplication() = default;
+
+    void start();
+    void stop();
+    bool isConnected() const { return m_connected; }
+    hyperliquid::WebsocketApi& getWebsocket() { return *m_websocket; }
+
+    // WebsocketApiListener
+    void onMessage(const std::string& message) override;
+    void onPostResponse(const std::string& message, hyperliquid::RestEndpointType type) override;
+    void onConnected() override;
+    void onDisconnected(bool hasError, const std::string& errMsg) override;
+
+    // WebsocketMessageHandler
+    void onOrderUpdate(const hyperliquid::OrderUpdate& update) override;
+    void onUserFill(const hyperliquid::Fill& fill) override;
+
+    // RestEndpointListener
+    void onPlaceOrder(const hyperliquid::PlaceOrderResponse& response) override;
+    void onModifyOrder(const hyperliquid::ModifyOrderResponse& response) override;
+    void onCancelOrder(const hyperliquid::CancelOrderResponse& response) override;
+
+private:
+    SimpleConfig& m_config;
+    RefDataHolder& m_refDataHolder;
+    SBEBinaryWriter& m_sbeWriter;
+    std::unique_ptr<hyperliquid::WebsocketApi> m_websocket;
+    hyperliquid::ApiConfig m_apiConfig;
+    hyperliquid::WebsocketMessageParser m_wsParser;
+    hyperliquid::RestApiMessageParser m_restParser;
+    bool m_connected = false;
+
+    static hyperliquid::Environment getEnvironment(const std::string& envName);
+    static com::liversedge::messages::OrdStatus::Value mapOrderStatus(hyperliquid::OrderStatus status);
+    static com::liversedge::messages::Side::Value mapSide(char side);
+};
