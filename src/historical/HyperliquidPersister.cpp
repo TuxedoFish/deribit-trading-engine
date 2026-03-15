@@ -5,7 +5,6 @@ HyperliquidPersister::HyperliquidPersister(SimpleConfig& config) : HyperliquidMD
 {
 }
 
-// hyperliquid::WebsocketListener
 void HyperliquidPersister::onMessage(const std::string& message)
 {
     if (m_logger)
@@ -34,8 +33,7 @@ void HyperliquidPersister::onDisconnected(bool hasError, const std::string& errM
     HyperliquidMDApplicationBase::onDisconnected(hasError, errMsg);
 }
 
-// hyperliquid::RestListener
-void HyperliquidPersister::onMessage(const std::string& message, hyperliquid::InfoEndpointType type)
+void HyperliquidPersister::onMessage(const std::string& message, hyperliquid::RestEndpointType type)
 {
     if (m_logger)
     {

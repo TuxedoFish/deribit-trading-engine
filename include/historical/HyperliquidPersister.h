@@ -11,15 +11,11 @@ private:
     std::unique_ptr<MarketDataLogger> m_logger;
 
 public:
-    // Constructor with optional log directory
     explicit HyperliquidPersister(SimpleConfig& config);
     virtual ~HyperliquidPersister() = default;
 
-    // hyperliquid::WebsocketListener
     void onMessage(const std::string& message) override;
     void onConnected() override;
     void onDisconnected(bool hasError, const std::string& errMsg) override;
-
-    // hyperliquid::RestListener
-    virtual void onMessage(const std::string& message, hyperliquid::InfoEndpointType type) override;
+    virtual void onMessage(const std::string& message, hyperliquid::RestEndpointType type) override;
 };

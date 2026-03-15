@@ -9,14 +9,9 @@ public:
     explicit HyperliquidMDApplication(const SimpleConfig& config);
     virtual ~HyperliquidMDApplication() = default;
 
-    // hyperliquid::WebsocketListener
     void onConnected() override;
     void onDisconnected(bool hasError, const std::string& errMsg) override;
-
-    // hyperliquid::InfoEndpointListener
     void onMeta(const hyperliquid::MetaResponse& response) override;
-
-    // hyperliquid::WSMessageHandler
     void onL2BookLevel(const hyperliquid::L2BookUpdate& book, const hyperliquid::PriceLevel& level) override;
     void onTrade(const hyperliquid::Trade& trade) override;
 

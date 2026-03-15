@@ -11,7 +11,7 @@ endif ()
 
 project("deribit-trading-engine")
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 23)
 
 # Define generated files
 set(GENERATED_DIR ${CMAKE_SOURCE_DIR}/generated)
@@ -118,7 +118,7 @@ set(HISTORICAL_SOURCES
 )
 
 # Add source to this project's executable.
-add_executable(deribit-trading-engine
+add_executable(gateways
         ${MAIN_SOURCES}
         ${FIX_SOURCES}
         ${GATEWAY_SOURCES}
@@ -127,35 +127,35 @@ add_executable(deribit-trading-engine
         ${HISTORICAL_SOURCES}
 )
 
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-    set_property(TARGET deribit-trading-engine PROPERTY CXX_STANDARD 14)
-endif ()
-
 # Dependencies
 find_package(OpenSSL REQUIRED)
-find_package(quickfix CONFIG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS iostreams filesystem system)
-include_directories(${PROJECT_SOURCE_DIR}/third_party/hyperliquid-sdk-cpp)
-add_subdirectory("third_party/hyperliquid-sdk-cpp")
+IF (Boost_FOUND)
+    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+    ADD_DEFINITIONS( "-DHAS_BOOST" )
+ENDIF()
+include(third_party/quickfix.cmake)
+add_subdirectory("third_party/hyperliquid-sdk-cpp" EXCLUDE_FROM_ALL)
 
 if (WIN32)
-    target_link_libraries(deribit-trading-engine
+    target_link_libraries(gateways
             ws2_32 wsock32 winmm crypt32 secur32
     )
 elseif (UNIX)
-    target_link_libraries(deribit-trading-engine
+    target_link_libraries(gateways
             pthread dl
     )
 endif ()
 
-target_link_libraries(deribit-trading-engine
-        ${OPENSSL_LIBRARIES} quickfix hyperliquid-sdk
+target_link_libraries(gateways
+        quickfix hyperliquid-sdk
+        ${OPENSSL_LIBRARIES}
         Boost::iostreams Boost::filesystem Boost::system
 )
 
 # Generated code
-target_include_directories(deribit-trading-engine PRIVATE
+target_include_directories(gateways PRIVATE
         ${CMAKE_SOURCE_DIR}/generated
 )
 
-add_dependencies(deribit-trading-engine generate_sbe_code)
+add_dependencies(gateways generate_sbe_code)

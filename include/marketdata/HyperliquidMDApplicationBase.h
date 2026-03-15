@@ -6,19 +6,19 @@
 #include <string>
 #include <vector>
 #include "../util/SimpleConfig.h"
-#include "hyperliquid/rest/InfoApi.h"
-#include "hyperliquid/websocket/WSMessageHandler.h"
-#include "hyperliquid/websocket/WebsocketListener.h"
-#include "hyperliquid/rest/InfoEndpointListener.h"
-#include "hyperliquid/rest/RestListener.h"
-#include "hyperliquid/rest/RestMessageParser.h"
-#include "hyperliquid/websocket/WSMessageParser.h"
-#include "hyperliquid/websocket/MarketData.h"
+#include "hyperliquid/rest/RestApi.h"
+#include "hyperliquid/websocket/WebsocketMessageHandler.h"
+#include "hyperliquid/websocket/WebsocketApiListener.h"
+#include "hyperliquid/rest/RestEndpointListener.h"
+#include "hyperliquid/rest/RestApiListener.h"
+#include "hyperliquid/rest/RestApiMessageParser.h"
+#include "hyperliquid/websocket/WebsocketMessageParser.h"
+#include "hyperliquid/websocket/WebsocketApi.h"
 
-class HyperliquidMDApplicationBase : public hyperliquid::WebsocketListener,
-                                     public hyperliquid::RestListener,
-                                     public hyperliquid::InfoEndpointListener,
-                                     public hyperliquid::WSMessageHandler
+class HyperliquidMDApplicationBase : public hyperliquid::WebsocketApiListener,
+                                     public hyperliquid::RestApiListener,
+                                     public hyperliquid::RestEndpointListener,
+                                     public hyperliquid::WebsocketMessageHandler
 {
 public:
     HyperliquidMDApplicationBase(const SimpleConfig& config) : m_config{ config }, m_restParser(*this) {}
@@ -28,15 +28,15 @@ public:
     void start();
     void stop();
 
-    // hyperliquid::WebsocketListener
+    // hyperliquid::WebsocketApiListener
     virtual void onMessage(const std::string& message) override;
     virtual void onConnected() override;
     virtual void onDisconnected(bool hasError, const std::string& errMsg) override;
 
-    // hyperliquid::RestListener
-    virtual void onMessage(const std::string& message, hyperliquid::InfoEndpointType type) override;
+    // hyperliquid::RestApiListener
+    virtual void onMessage(const std::string& message, hyperliquid::RestEndpointType type) override;
 
-    // hyperliquid::InfoEndpointListener
+    // hyperliquid::RestEndpointListener
     virtual void onMeta(const hyperliquid::MetaResponse& response) override;
 
 protected:
@@ -48,8 +48,9 @@ protected:
 private:
     static hyperliquid::Environment getEnvironment(std::string envName);
 
-    std::unique_ptr<hyperliquid::MarketData> m_marketData;
-    std::unique_ptr<hyperliquid::InfoApi> m_infoApi;
-    hyperliquid::RestMessageParser m_restParser;
-    hyperliquid::WSMessageParser m_wsParser;
+    hyperliquid::ApiConfig m_apiConfig;
+    std::unique_ptr<hyperliquid::WebsocketApi> m_marketData;
+    std::unique_ptr<hyperliquid::RestApi> m_infoApi;
+    hyperliquid::RestApiMessageParser m_restParser;
+    hyperliquid::WebsocketMessageParser m_wsParser;
 };

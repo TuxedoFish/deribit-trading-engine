@@ -1,7 +1,6 @@
 #pragma once
 
 #include "MessageProcessor.h"
-#include "hyperliquid/types/InfoEndpointTypes.h"
 #include "hyperliquid/types/ResponseTypes.h"
 
 class HyperliquidMessageProcessor : public MessageProcessor
